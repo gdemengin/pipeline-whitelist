@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?jelly escape-by-default='true'?>
+<div>
+    <p>
+        <a href="https://github.com/gdemengin/pipeline-whitelist">pipeline-whitelist</a> a library to expose useful functions (blacklisted by default in jenkins) which should be whitelisted IMHO
+    </p>
+    <p>
+        <b>String manipulation</b>
+    </p>
+    <dl>
+        <dt><code>String multiply(String lhs, Integer rhs)</code></dt>
+        <dd>
+            <p>
+                multiply String by Integer
+            <p>
+        </dd>
+    </dl>
+    <p>
+        <b>Metadata access</b>
+    </p>
+    <dl>
+        <dt><code>StackTraceElement[] getStackTrace(Throwable e)</code></dt>
+        <dd>
+            <p>
+                get sanitized list of StackTraceElement for exception
+            <p>
+        </dd>
+        <dt><code>StackTraceElement[] getCurrentStackTrace()</code></dt>
+        <dd>
+            <p>
+                get sanitized list of StackTraceElement for current location
+            <p>
+        </dd>
+        <dt>
+            <code>String getMethodName(StackTraceElement element)</code><br>
+            <code>String getClassName(StackTraceElement element)</code><br>
+            <code>String getFileName(StackTraceElement element)</code><br>
+            <code>Integer getLineNumber(StackTraceElement element)</code>
+        </dt>
+        <dd>
+            <p>
+                get info from StackTraceElement
+            </p>
+        </dd>
+        <dt><code>Class getSuperclass(Class c)</code></dt>
+        <dd>
+            <p>
+                get superclass
+            </p>
+        </dd>
+    </dl>
+    <p>
+        <b>Access to Jenkins logs</b>
+    </p>
+    <dl>
+        <dt><code>String getRawBuildLog(org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper build = currentBuild)</code></dt>
+        <dd>
+            <p>
+                get raw log from current build
+            <p>
+        </dd>
+        <dt><code>java.util.LinkedHashMap getRawMatrixRunsLog(org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper build)</code></dt>
+        <dd>
+            <p>
+                get raw log from matrix build (map axisId:log)<br>
+                shall fail if build is not the runWrapper of a matrix build
+            <p>
+        </dd>
+    </dl>
+    <p>
+        <b>Build information</b>
+    </p>
+    <dl>
+        <dt><code>List&lt;String&gt; getBuildStartupCauses()</code></dt>
+        <dd>
+            <p>
+                startup causes
+            <p>
+        </dd>
+        <dt>
+            <code>Boolean isJobStartedByScm()</code><br>
+            <code>Boolean isJobStartedManually()</code><br>
+            <code>Boolean isJobStartedByTimer()</code>
+        </dt>
+        <dd>
+            <p>
+                tests who started the job
+            <p>
+        </dd>
+    </dl>
+    <p>
+        <b>Instance information</b>
+    </p>
+    <dl>
+        <dt><code>List&lt;java.util.LinkedHashMap&gt; getNodes(String label = null)</code></dt>
+        <dd>
+            <p>
+                if label is set get all nodes from this label (empty list if label does not exist)<br>
+                label can be a combinations of labels (example <code>getNodes('linux-centos-5.5 || windows7')</code>)<br>
+                returns list properties of the internal node object:
+                <ul>
+                    <li><code>name</code></li>
+                    <li><code>class</code></li>
+                    <li><code>selfLabel</code></li>
+                    <li><code>assignedLabels</code></li>
+                    <li><code>java.util.LinkedHashMap computer</code>
+                        <ul>
+                            <li><code>numExecutors</code></li>
+                            <li><code>countBusy</code></li>
+                            <li><code>offline</code></li>
+                            <li><code>temporarilyOffline</code></li>
+                            <li><code>offlineCause</code></li>
+                        </ul>
+                    </li>
+                </ul>
+            <p>
+        </dd>
+        <dt>
+            <code>Boolean isMaster(node)</code><br>
+            <code>Boolean isDumbSlave(node)</code><br>
+            <code>Boolean isDockerTransientNode(node)</code>
+        </dt>
+        <dd>
+            <p>
+                node type (using getNodes result or native node object)
+            <p>
+        </dd>
+        <dt><code>List&lt;java.util.LinkedHashMap&gt; getLabels()</code></dt>
+        <dd>
+            <p>
+                get all labels on the instance<br>
+                returns list properties of the internal label objects:
+                <ul>
+                    <li><code>name</code></li>
+                    <li><code>List&lt;java.util.LinkedHashMap&gt; clouds</code> : list of clouds (docker label definition)
+                        <ul>
+                            <li><code>containerCap</code> : max number of containers of this label</li>
+                            <li><code>List&lt;java.util.LinkedHashMap&gt; templates</code> : list of definitions of cloud on this instance (could be more than 1)
+                                <ul>
+                                    <li><code>labelString</code></li>
+                                    <li><code>image</code></li>
+                                    <li><code>instanceCap</code> : max number of containers on instance</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </p>
+        </dd>
+    </dl>
+    <p>
+        <b>Archiving of artifacts</b>
+    </p>
+    <dl>
+        <dt><code>archiveArtifactBuffer(buffer, name)</code></dt>
+        <dd>
+            <p>
+                archive buffer in run artifacts
+            <p>
+        </dd>
+    </dl>
+</div>
