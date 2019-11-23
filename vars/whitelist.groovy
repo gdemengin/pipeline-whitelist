@@ -2,9 +2,34 @@
 // = whitelist for Jenkins pipelines =
 // ===================================
 // a library to expose useful functions (blacklisted by default in jenkins) which should be whitelisted IMHO
+// to be approved as a Global Pipeline Library by jenkins administrator as whitelist
+// to use in a pipeline use library(identifier:'whitelist', changelog: false)
 
 import org.codehaus.groovy.runtime.StackTraceUtils
+import org.apache.commons.lang3.StringEscapeUtils
+import java.util.concurrent.Semaphore
+import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 
+
+//***********
+//* VERSION *
+//***********
+
+@NonCPS
+String version() {
+    return Jenkins.instance.getVersion()
+}
+
+@NonCPS
+java.util.LinkedHashMap plugins() {
+    return Jenkins.instance.pluginManager.plugins.collect {
+        [
+            displayName:it.getDisplayName(),
+            shortName: it.getShortName(),
+            version: it.getVersion()
+        ]
+    }
+}
 
 //********************************
 //* SHOULD NOT BE BLACKLISTED ?? *
@@ -18,6 +43,11 @@ String multiply(String lhs, Integer rhs) {
     return lhs*rhs
 }
 
+@NonCPS
+// blacklisted signature : staticMethod org.apache.commons.text.StringEscapeUtils escapeHtml4 java.lang.String
+String escapeHtml4(String input) {
+    return StringEscapeUtils.escapeHtml4(input)
+}
 
 //**********************
 //* ACCESS TO METADATA *
@@ -83,7 +113,7 @@ Class getSuperclass(Class c) {
 @NonCPS
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 // blacklisted signature : method hudson.model.Run getLog
-String getRawBuildLog(org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper build = currentBuild) {
+String getRawBuildLog(RunWrapper build = currentBuild) {
     return build.rawBuild.log
 }
 
@@ -95,7 +125,7 @@ String getRawBuildLog(org.jenkinsci.plugins.workflow.support.steps.build.RunWrap
 // blacklisted signature : method hudson.model.Run getExternalizableId
 // blacklisted signature : method hudson.model.Run getLog
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
-java.util.LinkedHashMap getRawMatrixRunsLog(org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper build) {
+java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build) {
     // cf https://stackoverflow.com/questions/40016424/remove-null-values-and-empty-maps-from-map-of-maps-to-undefined-depth-in-groov
     // .findAll { k, v -> v } to remove empty entries (otherwise logs from axis from other parents come up)
     return build.rawBuild.runs.collectEntries{ it.parentBuild == build.rawBuild ? [(it.externalizableId): it.log] : [] }.findAll { k, v -> v }
@@ -105,40 +135,74 @@ java.util.LinkedHashMap getRawMatrixRunsLog(org.jenkinsci.plugins.workflow.suppo
 //* BUILD INFORMATION *
 //*********************
 
+// get run wrapper from build by name/id
+@NonCPS
+// blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
+// blacklisted signature : method jenkins.model.Jenkins getItemByFullName java.lang.String
+// blacklisted signature : method hudson.model.Job getBuildByNumber int
+RunWrapper getRunWrapper(String jobName, Integer runId) {
+    def rawBuild = Jenkins.getInstance().getItemByFullName(jobName).getBuildByNumber(runId)
+    return new RunWrapper(rawBuild, false)
+}
+
+@NonCPS
+RunWrapper getRunWrapper(String jobName, String runId) {
+    return getRunWrapper(jobName, Integer.parseInt(runId))
+}
+
+// get run wrapper from last build by name
+@NonCPS
+// blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
+// blacklisted signature : method jenkins.model.Jenkins getItemByFullName java.lang.String
+// blacklisted signature : method hudson.model.Job getLastBuild
+RunWrapper getLastRunWrapper(String jobName) {
+    def rawBuild = Jenkins.getInstance().getItemByFullName(jobName).getLastBuild()
+    return new RunWrapper(rawBuild, false)
+}
+
+// get run wrapper from last stable build by name
+@NonCPS
+// blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
+// blacklisted signature : method jenkins.model.Jenkins getItemByFullName java.lang.String
+// blacklisted signature : method hudson.model.Job getLastStableBuild
+RunWrapper getLastStableRunWrapper(String jobName) {
+    def rawBuild = Jenkins.getInstance().getItemByFullName(jobName).getLastStableBuild()
+    return new RunWrapper(rawBuild, false)
+}
+
 // get list of startup causes
 @NonCPS
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 // blacklisted signature : method hudson.model.Run getCauses
 // blacklisted signature : method hudson.model.Cause getShortDescription
-List<String> getBuildStartupCauses() {
-    return currentBuild.rawBuild.causes.collect{ it.getShortDescription() }
+List<String> getBuildStartupCauses(RunWrapper build = currentBuild) {
+    return build.rawBuild.causes.collect{ it.getShortDescription() }
 }
 
 @NonCPS
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 // blacklisted signature : method hudson.model.Run getCause java.lang.Class
-Boolean isJobStartedByScm() {
-    return (currentBuild.rawBuild.getCause(hudson.triggers.SCMTrigger$SCMTriggerCause) != null) || (currentBuild.rawBuild.getCause(jenkins.branch.BranchIndexingCause) != null)
+Boolean isJobStartedByScm(RunWrapper build = currentBuild) {
+    return (build.rawBuild.getCause(hudson.triggers.SCMTrigger$SCMTriggerCause) != null) || (build.rawBuild.getCause(jenkins.branch.BranchIndexingCause) != null)
 }
 
 @NonCPS
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 // blacklisted signature : method hudson.model.Run getCause java.lang.Class
-Boolean isJobStartedManually() {
-    return currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null
+Boolean isJobStartedManually(RunWrapper build = currentBuild) {
+    return build.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null
 }
 
 @NonCPS
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 // blacklisted signature : method hudson.model.Run getCause java.lang.Class
-Boolean isJobStartedByTimer() {
-    return currentBuild.rawBuild.getCause(hudson.triggers.TimerTrigger$TimerTriggerCause) != null
+Boolean isJobStartedByTimer(RunWrapper build = currentBuild) {
+    return build.rawBuild.getCause(hudson.triggers.TimerTrigger$TimerTriggerCause) != null
 }
 
-
-//************************
-//* INSTANCE INFORMATION *
-//************************
+//*********************
+//* NODES INFORMATION *
+//*********************
 
 // expose useful (and public/harmless) properties of node (and computer object below node)
 @NonCPS
@@ -274,13 +338,13 @@ List<java.util.LinkedHashMap> getLabels() {
     }
 }
 
-//*************
-//* ARCHIVING *
-//*************
+//***************************************
+//* ARCHIVING & ACCESS TO JOB/RUN FILES *
+//***************************************
 
-// archive buffer directly on the master (no need to instantiate a node like ArchiveArtifact)
+// archive text file directly on the master (no need to instantiate a node like ArchiveArtifact)
 @NonCPS
-def archiveArtifactBuffer(buffer, name) {
+void archiveStringArtifact(String name, String buffer) {
     def jobRoot = currentBuild.rawBuild.getRootDir()
     def file = new File("${jobRoot}/archive/${name}")
     if (! file.parentFile.exists()){
@@ -289,6 +353,115 @@ def archiveArtifactBuffer(buffer, name) {
     file.write(buffer)
 }
 
-// TODO unarchivebuffer from another job
+// unarchive text artifact
+@NonCPS
+String unArchiveStringArtifact(String name, RunWrapper build = currentBuild) {
+    def jobRoot = build.rawBuild.getRootDir()
+    def file = new File("${jobRoot}/archive/${name}")
+    if (! file.exists()){
+        return null
+    }
+    return file.text
+}
+
+
+// archive logs with [<branch>] prefix on lines belonging to <branch>
+// and filter by branch if filterBranchName not null
+// cf https://stackoverflow.com/questions/38304403/jenkins-pipeline-how-to-get-logs-from-parallel-builds
+// cf https://stackoverflow.com/a/57351397
+// (workaround for https://issues.jenkins-ci.org/browse/JENKINS-54304)
+// possible options :
+// - filter=null branch to filter
+// - showParents=true
+// - markNestedFiltered=true
+// - hideVT100=true
+@NonCPS
+void archiveLogsWithBranchInfo(String name, java.util.LinkedHashMap options = [:])
+{
+    archiveStringArtifact(name, logparser.getLogsWithBranchInfo(options))
+}
+
+// get job config file
+@NonCPS
+String getJobConfig(RunWrapper build = currentBuild) {
+
+    def jobRoot = build.rawBuild.getRootDir()
+    def configFile = new File(jobRoot.parentFile.parentFile, 'config.xml')
+    assert configFile.exists()
+
+    return configFile.text
+}
+
+// get pipeline script from run
+// shall fail if this is not a workflow run
+@NonCPS
+java.util.LinkedHashMap getBuildPipelineScripts(RunWrapper build = currentBuild) {
+
+    def jobRoot = build.rawBuild.getRootDir()
+    def configFile = new File(jobRoot, 'build.xml')
+    assert configFile.exists()
+
+    def rootnode = new XmlSlurper().parse(configFile.path)
+    def script = rootnode.execution.script
+    def loadedScripts = [:]
+    rootnode.execution.loadedScripts.entry.each{
+        loadedScripts."${it.string[0]}" = it.string[1]
+    }
+
+    return [ script: script, loadedScripts: loadedScripts ]
+}
+
+// url to blue ocean
+@NonCPS
+String getBlueOceanUrl(RunWrapper build = currentBuild) {
+    def blueOceanDisplayUrlProvider = org.jenkinsci.plugins.displayurlapi.DisplayURLProvider.all().find { it.displayName == "Blue Ocean" }
+    return blueOceanDisplayUrlProvider.getRunURL(currentBuild.rawBuild)
+}
+
+//*************
+//* SEMAPHORE *
+//*************
+
+class NotBlockingSemaphore extends Semaphore {
+    private timeout
+
+    // keep timeout low to avoid blocking all branches for too long
+    // (in a single threade JVM, when a branch is blocked, everyone is blocked)
+    // for example one may set it to:
+    //   50ms when 10 branches or less might be blocked concurrently seems fair (500 ms max wait to go over all branches)
+    //   0 when more than 10 branches might be blocked concurrently
+    NotBlockingSemaphore(Integer limit, Integer timeout) {
+        super(limit)
+        this.timeout = timeout
+    }
+
+    void setTimeout(Integer timeout) {
+        this.timeout = timeout
+    }
+
+    // acquire semaphore with active wait
+    // to prevent the single threaded pipeline JVM to block in parrallel branches
+    void acquire() {
+        while( !tryAcquire(timeout, java.util.concurrent.TimeUnit.MILLISECONDS) ) {
+        }
+    }
+}
+
+// access semaphore
+NotBlockingSemaphore semaphore(Integer limit, Integer timeout = 50) {
+    return new NotBlockingSemaphore(limit, timeout)
+}
+
+void setSemaphoreTimeout(NotBlockingSemaphore sem, Integer timeout) {
+    sem.setTimeout(timeout)
+}
+
+void acquireSemaphore(NotBlockingSemaphore sem) {
+    sem.acquire()
+}
+
+void releaseSemaphore(NotBlockingSemaphore sem) {
+    sem.release()
+}
 
 return this
