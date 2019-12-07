@@ -24,9 +24,11 @@ String version() {
 java.util.LinkedHashMap plugins() {
     return Jenkins.instance.pluginManager.plugins.collect {
         [
-            displayName:it.getDisplayName(),
-            shortName: it.getShortName(),
-            version: it.getVersion()
+            it.getShortName() : [
+                displayName:it.getDisplayName(),
+                shortName: it.getShortName(),
+                version: it.getVersion()
+            ]
         ]
     }
 }
