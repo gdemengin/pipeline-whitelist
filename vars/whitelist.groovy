@@ -21,14 +21,12 @@ String version() {
 }
 
 @NonCPS
-java.util.LinkedHashMap plugins() {
+List<java.util.LinkedHashMap> plugins() {
     return Jenkins.instance.pluginManager.plugins.collect {
         [
-            it.getShortName() : [
-                displayName:it.getDisplayName(),
-                shortName: it.getShortName(),
-                version: it.getVersion()
-            ]
+            displayName:it.getDisplayName(),
+            shortName: it.getShortName(),
+            version: it.getVersion()
         ]
     }
 }
