@@ -136,8 +136,7 @@ java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build) {
 
 @NonCPS
 java.util.LinkedHashMap getJobs() {
-    return
-        Jenkins.getInstance().getItems().findAll{
+    return Jenkins.getInstance().getItems().findAll{
             it instanceof hudson.model.Job
         }.collectEntries{ [(it.name): it] }
 }
