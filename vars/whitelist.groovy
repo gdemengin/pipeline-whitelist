@@ -139,7 +139,7 @@ java.util.LinkedHashMap getJobs() {
     return
         Jenkins.getInstance().getItems().findAll{
             it isinstanceof hudson.model.Job
-        }.collectEntries{ (it.name): it }
+        }.collectEntries{ [(it.name): it] }
 }
 
 @NonCPS
