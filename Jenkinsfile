@@ -140,7 +140,7 @@ def testLog() {
     */
 }
 
-def testJobs1ndBuilds() {
+def testJobsAndBuilds() {
     def jobs = whitelist.getJobs()
     print "jobs : \n\t${jobs.collect{ it.toString() }.join('\n\t')}"
     assert jobs."${env.JOB_NAME}" != null, "${env.JOB_NAME} not in job list"
@@ -158,7 +158,7 @@ def testJobs1ndBuilds() {
     assert build.getFullDisplayName() == currentBuild.getFullDisplayName(), 'could not get currentBuild with getRunWrapper'
 
     build = whitelist.getRunWrapper(job, Integer.parseInt(env.BUILD_NUMBER))
-    print "getRunWrapper(${job}, ${env.BUILD_NUMBER}) = ${build.getFullDisplayName()}"
+    print "getRunWrapper(${job}, Integer.parseInt('${env.BUILD_NUMBER}')) = ${build.getFullDisplayName()}"
     assert build.getFullDisplayName() == currentBuild.getFullDisplayName(), 'could not get currentBuild with getRunWrapper'
 
     build = whitelist.getLastRunWrapper(job)
@@ -170,30 +170,91 @@ def testJobs1ndBuilds() {
 
     // no simple idea how to assert the result of this call: for now just try to make the call to make sure it does not fail
     print "getBuildStartupCauses() = ${whitelist.getBuildStartupCauses()}"
+    print "isJobStartedByScm() = ${whitelist.isJobStartedByScm()}"
+    print "isJobStartedManually() = ${whitelist.isJobStartedManually()}"
+    print "isJobStartedByTimer() = ${whitelist.isJobStartedByTimer()}"
     assert [whitelist.isJobStartedByScm(), whitelist.isJobStartedManually(), whitelist.isJobStartedByTimer()].sort() == [false, false, true],
         'something unexpected happened: the build was not started by scm, timer or human'
 }
 
 def testNodesAndLabels() {
-    // TODO
-
-    print whitelist.getNodes()
+    print "nodes : \n\t${whitelist.getNodes().collect { it.toString() }.join('\n\t')}"
     assert whitelist.getNodes().size() != 0
+
+    for (node in whitelist.getNodes()) {
+        assert whitelist.isMaster(node) || whitelist.isDumbSlave(node) || whitelist.isDockerTransientNode(node)
+    }
+
     assert whitelist.getNodes('wrongLabelDoesNotExist').size() == 0
+
+    // master may not be in the list returned by getLabels but it is a label of one element
     assert whitelist.getNodes('master').size() == 1
+    assert whitelist.isMaster(whitelist.getNodes('master')[0])
+
+    print "labels : \n\t${whitelist.getLabels().collect { it.toString() }.join('\n\t')}"
+
     assert whitelist.getLabels().size() != 0
 
     // make sure we can call getNodes (no exception) on all labels
     for (label in whitelist.getLabels().collect{ it.name }) {
-        print whitelist.getNodes(label)
+        print "nodes for label ${label} : \n\t${whitelist.getNodes(label).collect { it.toString() }.join('\n\t')}"
     }
-
-    // TODO test isMaster, ...
 }
 
-testVersion()
-testStringManipulation()
-testMetaDataAccess()
-testLog()
-testJobs1ndBuilds()
-testNodesAndLabels()
+def testJobFilesAccess() {
+    print 'testing archive/unarchive'
+    whitelist.archiveStringArtifact('artifact1.txt', 'text in artifact')
+    def text = whitelist.unArchiveStringArtifact('artifact1.txt')
+    assert text == 'text in artifact'
+
+    print "job config = \n\t${whitelist.getJobConfig().split('\n').join('\n\t')}"
+
+    def scripts = whitelist.getBuildPipelineScripts()
+    print "pipeline script = \n\t${scripts.script.split('\n').join('\n\t')}"
+    assert scripts.loadedScripts.size() == 0
+
+    node() {
+        writeFile file: 'toload1', text: 'echo "this is a loaded script"'
+    }
+    scripts = whitelist.getBuildPipelineScripts()
+    assert scripts.loadedScripts.size() == 1
+    assert scripts.loadedScripts[0] == 'echo "this is a loaded script"'
+
+    node() {
+        writeFile file: 'toload2', text: 'echo "this is another loaded script"'
+    }
+    scripts = whitelist.getBuildPipelineScripts()
+    assert scripts.loadedScripts.size() == 2
+
+    print scripts.loadedScripts
+    print "pipeline loadedScripts = \n\t${ scripts.loadedScripts.collect { it.split('\n').join('\n\t\t') }.join('\n\t') }"
+}
+
+def testSemaphore() {
+    unstable('nyi')
+}
+
+stage('testVersion') {
+    testVersion()
+}
+stage('testStringManipulation') {
+    testStringManipulation()
+}
+stage('testMetaDataAccess') {
+    testMetaDataAccess()
+}
+stage('testLog') {
+    testLog()
+}
+stage('testJobsAndBuilds') {
+    testJobsAndBuilds()
+}
+stage('testNodesAndLabels') {
+    testNodesAndLabels()
+}
+stage('testJobFilesAccess') {
+    testJobFilesAccess()
+}
+stage('testSemaphore') {
+    testSemaphore()
+}

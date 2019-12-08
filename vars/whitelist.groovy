@@ -368,9 +368,9 @@ List<java.util.LinkedHashMap> getLabels() {
     }
 }
 
-//***************************************
-//* ARCHIVING & ACCESS TO JOB/RUN FILES *
-//***************************************
+//***************************
+//* ACCESS TO JOB/RUN FILES *
+//***************************
 
 // archive text file directly on the master (no need to instantiate a node like ArchiveArtifact)
 @NonCPS
@@ -394,23 +394,6 @@ String unArchiveStringArtifact(String name, RunWrapper build = currentBuild) {
     return file.text
 }
 
-
-// archive logs with [<branch>] prefix on lines belonging to <branch>
-// and filter by branch if filterBranchName not null
-// cf https://stackoverflow.com/questions/38304403/jenkins-pipeline-how-to-get-logs-from-parallel-builds
-// cf https://stackoverflow.com/a/57351397
-// (workaround for https://issues.jenkins-ci.org/browse/JENKINS-54304)
-// possible options :
-// - filter=null branch to filter
-// - showParents=true
-// - markNestedFiltered=true
-// - hideVT100=true
-@NonCPS
-void archiveLogsWithBranchInfo(String name, java.util.LinkedHashMap options = [:])
-{
-    archiveStringArtifact(name, logparser.getLogsWithBranchInfo(options))
-}
-
 // get job config file
 @NonCPS
 String getJobConfig(RunWrapper build = currentBuild) {
@@ -432,20 +415,13 @@ java.util.LinkedHashMap getBuildPipelineScripts(RunWrapper build = currentBuild)
     assert configFile.exists()
 
     def rootnode = new XmlSlurper().parse(configFile.path)
-    def script = rootnode.execution.script
+    def script = rootnode.execution.script.toString()
     def loadedScripts = [:]
     rootnode.execution.loadedScripts.entry.each{
         loadedScripts."${it.string[0]}" = it.string[1]
     }
 
     return [ script: script, loadedScripts: loadedScripts ]
-}
-
-// url to blue ocean
-@NonCPS
-String getBlueOceanUrl(RunWrapper build = currentBuild) {
-    def blueOceanDisplayUrlProvider = org.jenkinsci.plugins.displayurlapi.DisplayURLProvider.all().find { it.displayName == "Blue Ocean" }
-    return blueOceanDisplayUrlProvider.getRunURL(currentBuild.rawBuild)
 }
 
 //*************
