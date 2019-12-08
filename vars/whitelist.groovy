@@ -2,8 +2,6 @@
 // = whitelist for Jenkins pipelines =
 // ===================================
 // a library to expose useful functions (blacklisted by default in jenkins) which should be whitelisted IMHO
-// to be approved as a Global Pipeline Library by jenkins administrator as whitelist
-// to use in a pipeline use library(identifier:'whitelist', changelog: false)
 
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.apache.commons.lang3.StringEscapeUtils
@@ -11,9 +9,9 @@ import java.util.concurrent.Semaphore
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 
 
-//***********
-//* VERSION *
-//***********
+//*****************************
+//* JENKINS & PLUGINS VERSION *
+//*****************************
 
 @NonCPS
 String version() {
@@ -31,12 +29,12 @@ List<java.util.LinkedHashMap> plugins() {
     }
 }
 
-//********************************
-//* SHOULD NOT BE BLACKLISTED ?? *
-//********************************
+//***********************
+//* STRING MANIPULATION *
+//***********************
 
 // multiply string by a number
-// TODO should not be blacklisted, report this to jenkins as a bug ?
+// should not be blacklisted ...
 @NonCPS
 // blacklisted signature : staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods multiply java.lang.String java.lang.Number
 String multiply(String lhs, Integer rhs) {
@@ -45,6 +43,7 @@ String multiply(String lhs, Integer rhs) {
 
 @NonCPS
 // blacklisted signature : staticMethod org.apache.commons.text.StringEscapeUtils escapeHtml4 java.lang.String
+// should not be blacklisted ...
 String escapeHtml4(String input) {
     return StringEscapeUtils.escapeHtml4(input)
 }
@@ -169,6 +168,16 @@ RunWrapper getLastStableRunWrapper(String jobName) {
     def rawBuild = Jenkins.getInstance().getItemByFullName(jobName).getLastStableBuild()
     return new RunWrapper(rawBuild, false)
 }
+
+
+// TODO remove as it is now possible to do this ?
+/*
+print currentBuild.getBuildCauses()
+print currentBuild.getBuildCauses('hudson.triggers.SCMTrigger$SCMTriggerCause')
+print currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')
+print currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause')
+print currentBuild.getBuildCauses('org.jenkinsci.plugins.workflow.cps.replay.ReplayCause')
+*/
 
 // get list of startup causes
 @NonCPS
