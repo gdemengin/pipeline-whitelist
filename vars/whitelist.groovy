@@ -130,23 +130,42 @@ java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build) {
     return build.rawBuild.runs.collectEntries{ it.parentBuild == build.rawBuild ? [(it.externalizableId): it.log] : [] }.findAll { k, v -> v }
 }
 
-//*********************
-//* BUILD INFORMATION *
-//*********************
+//*****************
+//* JOBS & BUILDS *
+//*****************
+
+@NonCPS
+java.util.LinkedHashMap getJobs() {
+    return
+        Jenkins.getInstance().getItems().findAll{
+            it isinstanceof hudson.model.Job
+        }.collectEntries{ (it.name): it }
+}
+
+@NonCPS
+hudson.model.Job getJobByName(String name) {
+    return Jenkins.getInstance().getItemByFullName(name)
+}
+
+@NonCPS
+List<Integer> getRunIds(hudson.model.Job job) {
+    return job.getBuilds().collect{ it.id }
+}
+
 
 // get run wrapper from build by name/id
 @NonCPS
 // blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
 // blacklisted signature : method jenkins.model.Jenkins getItemByFullName java.lang.String
 // blacklisted signature : method hudson.model.Job getBuildByNumber int
-RunWrapper getRunWrapper(String jobName, Integer runId) {
-    def rawBuild = Jenkins.getInstance().getItemByFullName(jobName).getBuildByNumber(runId)
-    return new RunWrapper(rawBuild, false)
+RunWrapper getRunWrapper(hudson.model.Job job, Integer runId) {
+    def rawBuild = job.getBuildByNumber(runId)
+    return rawBuild ? new RunWrapper(rawBuild, false) : null
 }
 
 @NonCPS
-RunWrapper getRunWrapper(String jobName, String runId) {
-    return getRunWrapper(jobName, Integer.parseInt(runId))
+RunWrapper getRunWrapper(hudson.model.Job job, String runId) {
+    return getRunWrapper(job, Integer.parseInt(runId))
 }
 
 // get run wrapper from last build by name
@@ -154,9 +173,9 @@ RunWrapper getRunWrapper(String jobName, String runId) {
 // blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
 // blacklisted signature : method jenkins.model.Jenkins getItemByFullName java.lang.String
 // blacklisted signature : method hudson.model.Job getLastBuild
-RunWrapper getLastRunWrapper(String jobName) {
-    def rawBuild = Jenkins.getInstance().getItemByFullName(jobName).getLastBuild()
-    return new RunWrapper(rawBuild, false)
+RunWrapper getLastRunWrapper(hudson.model.Job job) {
+    def rawBuild = job.getLastBuild()
+    return rawBuild ? new RunWrapper(rawBuild, false) : null
 }
 
 // get run wrapper from last stable build by name
@@ -164,9 +183,9 @@ RunWrapper getLastRunWrapper(String jobName) {
 // blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
 // blacklisted signature : method jenkins.model.Jenkins getItemByFullName java.lang.String
 // blacklisted signature : method hudson.model.Job getLastStableBuild
-RunWrapper getLastStableRunWrapper(String jobName) {
-    def rawBuild = Jenkins.getInstance().getItemByFullName(jobName).getLastStableBuild()
-    return new RunWrapper(rawBuild, false)
+RunWrapper getLastStableRunWrapper(hudson.model.Job job) {
+    def rawBuild = job.getLastStableBuild()
+    return rawbuild ? new RunWrapper(rawBuild, false) : null
 }
 
 
@@ -209,9 +228,9 @@ Boolean isJobStartedByTimer(RunWrapper build = currentBuild) {
     return build.rawBuild.getCause(hudson.triggers.TimerTrigger$TimerTriggerCause) != null
 }
 
-//*********************
-//* NODES INFORMATION *
-//*********************
+//******************
+//* NODES & LABELS *
+//******************
 
 // expose useful (and public/harmless) properties of node (and computer object below node)
 @NonCPS
@@ -298,19 +317,22 @@ List<java.util.LinkedHashMap> getNodes(String label = null) {
 
 @NonCPS
 Boolean isMaster(node) {
-    assert node.class in [hudson.model.Hudson, hudson.slaves.DumbSlave, io.jenkins.docker.DockerTransientNode], "unexpected class ${node.class} for node object"
+    assert node.class in [hudson.model.Hudson, hudson.slaves.DumbSlave, io.jenkins.docker.DockerTransientNode],
+        "unexpected class ${node.class} for node object"
     return (node.class == hudson.model.Hudson)
 }
 
 @NonCPS
 Boolean isDumbSlave(node) {
-    assert node.class in [hudson.model.Hudson, hudson.slaves.DumbSlave, io.jenkins.docker.DockerTransientNode], "unexpected class ${node.class} for node object"
+    assert node.class in [hudson.model.Hudson, hudson.slaves.DumbSlave, io.jenkins.docker.DockerTransientNode],
+        "unexpected class ${node.class} for node object"
     return (node.class == hudson.slaves.DumbSlave)
 }
 
 @NonCPS
 Boolean isDockerTransientNode(node) {
-    assert node.class in [hudson.model.Hudson, hudson.slaves.DumbSlave, io.jenkins.docker.DockerTransientNode], "unexpected class ${node.class} for node object"
+    assert node.class in [hudson.model.Hudson, hudson.slaves.DumbSlave, io.jenkins.docker.DockerTransientNode],
+        "unexpected class ${node.class} for node object"
     return (node.class == io.jenkins.docker.DockerTransientNode)
 }
 

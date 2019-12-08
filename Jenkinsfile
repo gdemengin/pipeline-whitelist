@@ -140,21 +140,33 @@ def testLog() {
     */
 }
 
-def testBuildInformation() {
-    def build = whitelist.getRunWrapper(env.JOB_NAME, env.BUILD_NUMBER)
-    print "getRunWrapper(${env.JOB_NAME}, ${env.BUILD_NUMBER}) = ${build.getFullDisplayName()}"
+def testJobs1ndBuilds() {
+    def jobs = whitelist.getJobs()
+    print "jobs : \n\t${jobs.collect{ it.toString() }.join('\n\t')}"
+    assert jobs."${env.JOB_NAME}" != null, "${env.JOB_NAME} not in job list"
+
+    def job = whitelist.getJobByName(env.JOB_NAME)
+    print "getJobByName(${env.JOB_NAME}) == ${job}"
+    assert jobs."${env.JOB_NAME}" == job
+
+    def runIds = whitelist.getRunIds(job)
+    print "run ids for current job = ${runIds}"
+    assert runIds.contains(env.BUILD_NUMBER), "${env.BUILD_NUMBER} not in list of ids for current job"
+
+    def build = whitelist.getRunWrapper(job, env.BUILD_NUMBER)
+    print "getRunWrapper(${job}, ${env.BUILD_NUMBER}) = ${build.getFullDisplayName()}"
     assert build.getFullDisplayName() == currentBuild.getFullDisplayName(), 'could not get currentBuild with getRunWrapper'
 
-    build = whitelist.getRunWrapper(env.JOB_NAME, Integer.parseInt(env.BUILD_NUMBER))
-    print "getRunWrapper(${env.JOB_NAME}, ${env.BUILD_NUMBER}) = ${build.getFullDisplayName()}"
+    build = whitelist.getRunWrapper(job, Integer.parseInt(env.BUILD_NUMBER))
+    print "getRunWrapper(${job}, ${env.BUILD_NUMBER}) = ${build.getFullDisplayName()}"
     assert build.getFullDisplayName() == currentBuild.getFullDisplayName(), 'could not get currentBuild with getRunWrapper'
 
-    build = whitelist.getLastRunWrapper(env.JOB_NAME)
-    print "getLastRunWrapper(${env.JOB_NAME}) = ${build.getFullDisplayName()}"
+    build = whitelist.getLastRunWrapper(job)
+    print "getLastRunWrapper(${job}) = ${build.getFullDisplayName()}"
     assert build.getFullDisplayName() == currentBuild.getFullDisplayName(), 'could not get currentBuild with getLastRunWrapper'
 
-    build = whitelist.getLastStableRunWrapper(env.JOB_NAME)
-    print "getLastStableRunWrapper(${env.JOB_NAME}) = ${build.getFullDisplayName()}"
+    build = whitelist.getLastStableRunWrapper(job)
+    print "getLastStableRunWrapper(${job}) = ${build ? build.getFullDisplayName() : null}"
 
     // no simple idea how to assert the result of this call: for now just try to make the call to make sure it does not fail
     print "getBuildStartupCauses() = ${whitelist.getBuildStartupCauses()}"
@@ -162,7 +174,7 @@ def testBuildInformation() {
         'something unexpected happened: the build was not started by scm, timer or human'
 }
 
-def testNodeInformation() {
+def testNodesAndLabels() {
     // TODO
 
     print whitelist.getNodes()
@@ -183,5 +195,5 @@ testVersion()
 testStringManipulation()
 testMetaDataAccess()
 testLog()
-testBuildInformation()
-testNodeInformation()
+testJobs1ndBuilds()
+testNodesAndLabels()
