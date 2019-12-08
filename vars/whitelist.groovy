@@ -184,7 +184,7 @@ RunWrapper getLastRunWrapper(hudson.model.Job job) {
 // blacklisted signature : method hudson.model.Job getLastStableBuild
 RunWrapper getLastStableRunWrapper(hudson.model.Job job) {
     def rawBuild = job.getLastStableBuild()
-    return rawbuild ? new RunWrapper(rawBuild, false) : null
+    return rawBuild ? new RunWrapper(rawBuild, false) : null
 }
 
 
