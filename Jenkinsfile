@@ -235,7 +235,44 @@ def testJobFilesAccess() {
 }
 
 def testSemaphore() {
-    unstable('nyi')
+    print 'test semaphore'
+    timeout(time: 30, unit: 'SECONDS') {
+        def s = whitelist.semaphore(1)
+        whitelist.acquireSemaphore(s)
+        whitelist. releaseSemaphore(s)
+
+        s = whitelist.semaphore(1)
+        def b1 = 0
+        def b2 = 0
+        def didWait = false
+        parallel b1: {
+            whitelist.acquireSemaphore(s)
+            b1 = 1
+            if (b2 == 0) {
+                sleep 5
+                // this assert would fail if the other branch did go passed the acquire within 5 seconds
+                // if not it's proof the other branch did not start
+                assert b2 == 0
+                didWait = true
+            }
+            whitelist. releaseSemaphore(s)
+        }, b2: {
+            whitelist.acquireSemaphore(s)
+            b2 = 1
+            if (b1 == 0) {
+                sleep 5
+                // this assert would fail if the other branch did go passed the acquire
+                // if not it's proof the other branch did not start
+                assert b1 == 0
+                didWait = true
+            }
+            whitelist. releaseSemaphore(s)
+        }, failFast: true
+
+        // this assert would fail if both branches did go passed the acquire at the same time
+        assert didWait == true
+    }
+    print 'ok'
 }
 
 
