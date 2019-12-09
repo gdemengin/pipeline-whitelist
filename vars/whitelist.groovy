@@ -418,7 +418,7 @@ java.util.LinkedHashMap getBuildPipelineScripts(RunWrapper build = currentBuild)
     def script = rootnode.execution.script.toString()
     def loadedScripts = [:]
     rootnode.execution.loadedScripts.entry.each{
-        loadedScripts."${it.string[0]}" = it.string[1]
+        loadedScripts["${it.string[0].toString()}".toString()] = it.string[1].toString()
     }
 
     return [ script: script, loadedScripts: loadedScripts ]

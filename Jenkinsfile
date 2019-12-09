@@ -201,6 +201,7 @@ def testNodesAndLabels() {
     }
 }
 
+
 def testJobFilesAccess() {
     print 'testing archive/unarchive'
     whitelist.archiveStringArtifact('artifact1.txt', 'text in artifact')
@@ -215,24 +216,30 @@ def testJobFilesAccess() {
 
     node() {
         writeFile file: 'toload1', text: 'echo "this is a loaded script"'
+        load 'toload1'
     }
     scripts = whitelist.getBuildPipelineScripts()
     assert scripts.loadedScripts.size() == 1
-    assert scripts.loadedScripts[0] == 'echo "this is a loaded script"'
+    print "pipeline loadedScripts = \n\t${ scripts.loadedScripts.collect{ k, v -> "$k:\n\t\t${v.split('\n').join('\n\t\t')}" }.join('\n\t') }"
+    assert scripts.loadedScripts.Script1 == 'echo "this is a loaded script"'
 
     node() {
         writeFile file: 'toload2', text: 'echo "this is another loaded script"'
+        load 'toload2'
     }
     scripts = whitelist.getBuildPipelineScripts()
     assert scripts.loadedScripts.size() == 2
 
     print scripts.loadedScripts
-    print "pipeline loadedScripts = \n\t${ scripts.loadedScripts.collect { it.split('\n').join('\n\t\t') }.join('\n\t') }"
+    print "pipeline loadedScripts = \n\t${ scripts.loadedScripts.collect{ k, v -> "$k:\n\t\t${v.split('\n').join('\n\t\t')}" }.join('\n\t') }"
 }
 
 def testSemaphore() {
     unstable('nyi')
 }
+
+
+// run tests
 
 stage('testVersion') {
     testVersion()
