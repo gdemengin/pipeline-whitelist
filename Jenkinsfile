@@ -65,30 +65,58 @@ def testMetaDataAccess() {
     assert currentStackElement.toString() == expected, message
 
 
-    // syntax error
+    // test various kind of Exceptions and Errors
     def excStackTrace = null
     def beforeExcStackTrace = null
+    def excLine = null
+
+    // syntax error (groovy.lang.MissingPropertyException)
+    excStackTrace = null
+    beforeExcStackTrace = null
     try {
         beforeExcStackTrace = whitelist.getCurrentStackTrace()
-        this_is_a_syntax_error
+        this_is_a syntax_error
     } catch (e) {
+        print "caught ${e.class}"
+        assert e.class == groovy.lang.MissingPropertyException
         excStackTrace = whitelist.getStackTrace(e)
     }
     assert excStackTrace != null, 'could not get stack trace for syntax error'
     print "syntax error stacktrace = \n\t${excStackTrace.collect { it.toString() }.join('\n\t')}"
     // the line of syntax error is not the exception itself: look for it in the stack
-    def excLine = whitelist.getLineNumber(beforeExcStackTrace[0]) + 1
+    excLine = whitelist.getLineNumber(beforeExcStackTrace[0]) + 1
     expected = "${currentClass}.${currentMethod}(${currentFile}:${excLine})"
     assert excStackTrace.collect{ it.toString() }.contains(expected.toString()),
         "'${expected}' not found in stacktrace"
 
-    // exception
+    // no such method error (java.lang.NoSuchMethodError)
+    excStackTrace = null
+    beforeExcStackTrace = null
+    try {
+        beforeExcStackTrace = whitelist.getCurrentStackTrace()
+        this_is_an_error()
+    } catch (Error e) {
+        print "caught ${e.class}"
+        assert e.class == java.lang.NoSuchMethodError
+        excStackTrace = whitelist.getStackTrace(e)
+    }
+    assert excStackTrace != null, 'could not get stack trace for error'
+    print "error stacktrace = \n\t${excStackTrace.collect { it.toString() }.join('\n\t')}"
+    // the line of syntax error is not the exception itself: look for it in the stack
+    excLine = whitelist.getLineNumber(beforeExcStackTrace[0]) + 1
+    expected = "${currentClass}.${currentMethod}(${currentFile}:${excLine})"
+    assert excStackTrace.collect{ it.toString() }.contains(expected.toString()),
+        "'${expected}' not found in stacktrace"
+
+    // plain exception
     excStackTrace = null
     beforeExcStackTrace = null
     try {
         beforeExcStackTrace = whitelist.getCurrentStackTrace()
         throw new Exception('this is an exception')
     } catch (e) {
+        print e.class
+        assert e.class == java.lang.Exception
         excStackTrace = whitelist.getStackTrace(e)
     }
     assert excStackTrace != null, 'could not get stack trace for exception'
@@ -98,13 +126,15 @@ def testMetaDataAccess() {
     expected = "${currentClass}.${currentMethod}(${currentFile}:${excLine})"
     assert excStackTrace[0].toString() == expected.toString(), "'${expected}' not the first item of stacktrace"
 
-    // error
+    // error statement (hudson.AbortException)
     excStackTrace = null
     beforeExcStackTrace = null
     try {
         beforeExcStackTrace = whitelist.getCurrentStackTrace()
         error 'this is an error'
     } catch (e) {
+        print e.class
+        assert e.class == hudson.AbortException
         excStackTrace = whitelist.getStackTrace(e)
     }
     assert excStackTrace != null, 'could not get stack trace for error'

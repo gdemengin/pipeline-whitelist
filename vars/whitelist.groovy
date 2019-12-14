@@ -188,16 +188,13 @@ RunWrapper getLastStableRunWrapper(hudson.model.Job job) {
 }
 
 
-// TODO remove as it is now possible to do this ?
-/*
-print currentBuild.getBuildCauses()
-print currentBuild.getBuildCauses('hudson.triggers.SCMTrigger$SCMTriggerCause')
-print currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')
-print currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause')
-print currentBuild.getBuildCauses('org.jenkinsci.plugins.workflow.cps.replay.ReplayCause')
-*/
+//******************
+//* STARTUP CAUSES *
+// in recent versions this is not needed anymore as RunWrapper now has public method to to the same:
+// keep them for compatibility with previous versions
 
 // get list of startup causes
+// OBSOLETE: use RunWrapper.getBuildCauses.collect{ it.getShortDescription() }
 @NonCPS
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 // blacklisted signature : method hudson.model.Run getCauses
@@ -206,6 +203,9 @@ List<String> getBuildStartupCauses(RunWrapper build = currentBuild) {
     return build.rawBuild.causes.collect{ it.getShortDescription() }
 }
 
+// OBSOLETE: use
+//     RunWrapper.getBuildCauses(hudson.triggers.SCMTrigger$SCMTriggerCause) != null ||
+//     RunWrapper.getBuildCauses('jenkins.branch.BranchIndexingCause') != null
 @NonCPS
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 // blacklisted signature : method hudson.model.Run getCause java.lang.Class
@@ -213,6 +213,7 @@ Boolean isJobStartedByScm(RunWrapper build = currentBuild) {
     return (build.rawBuild.getCause(hudson.triggers.SCMTrigger$SCMTriggerCause) != null) || (build.rawBuild.getCause(jenkins.branch.BranchIndexingCause) != null)
 }
 
+// OBSOLETE: use RunWrapper.getBuildCauses('hudson.model.Cause$UserIdCause') != null
 @NonCPS
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 // blacklisted signature : method hudson.model.Run getCause java.lang.Class
@@ -220,6 +221,7 @@ Boolean isJobStartedManually(RunWrapper build = currentBuild) {
     return build.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null
 }
 
+// OBSOLETE: use RunWrapper.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') != null
 @NonCPS
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 // blacklisted signature : method hudson.model.Run getCause java.lang.Class
