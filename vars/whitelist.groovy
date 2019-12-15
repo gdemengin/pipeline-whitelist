@@ -136,9 +136,18 @@ java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build) {
 
 @NonCPS
 java.util.LinkedHashMap getJobs() {
-    return Jenkins.getInstance().getItems().findAll{
+    def jobs = Jenkins.getInstance().getItems().findAll{
             it instanceof hudson.model.Job
-        }.collectEntries{ [(it.name): it] }
+        }
+
+    // add multiconf children jobs
+    Jenkins.getInstance().getItems().findAll{
+        it instanceof org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
+    }.each{ jobs += it.items }
+
+    // DO NOT add matrix children jobs (or may be we  should ?)
+
+    return jobs.collectEntries{ [(it.fullName): it] }
 }
 
 @NonCPS

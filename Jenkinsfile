@@ -1,7 +1,7 @@
 // sample pipeline to test https://github.com/gdemengin/pipeline-whitelist/ "Global Pipeline Library" whitelist
 
 
-// import logparser library
+// import whitelist library
 @Library('pipeline-whitelist@master') _
 
 // sort list of maps by field
@@ -29,11 +29,15 @@ def testVersion() {
 def testStringManipulation() {
     print 'testing string manipulation'
 
-    assert whitelist.multiply('toto ', 3) == 'toto toto toto ',
-        "whitelist.multiply('toto ', 3) gives an unexpected result: '${whitelist.multiply('toto ', 3)}'"
+    def result = whitelist.multiply('toto ', 3)
+    def expected = 'toto toto toto '
+    assert result == expected,
+        "whitelist.multiply('toto ', 3) gives an unexpected result: '${result}', expected: '${expected}'"
 
-    assert whitelist.escapeHtml4('é">&<') == '&eacute;&quot;&gt;&amp;&lt;',
-        "whitelist.escapeHtml4('é\">&<') gives an unexpected result: '${whitelist.escapeHtml4('é\">&<')}'"
+    result = whitelist.escapeHtml4('">&<')
+    expected = '&quot;&gt;&amp;&lt;'
+    assert result == expected,
+        "whitelist.escapeHtml4('\">&<') gives an unexpected result: '${result}', expected: '${expected}'"
 }
 
 def testMetaDataAccess() {
