@@ -119,7 +119,7 @@ StackTraceElement[] filterStackTrace(StackTraceElement[] st) {
     // - or Script1, Script2, etc ... (scripts loaded inside pipeline)
     return st.findAll {
         // keep only the ones from WorkflowScript, Script1.groovy, Script2.groovy, ...
-        def filename = whitelist.getFileName(it)
+        def filename = getFileName(it)
         return filename == 'WorkflowScript' ||
             ( filename != null && filename.find(/^Script[0-9]+.groovy$/) )
     }
