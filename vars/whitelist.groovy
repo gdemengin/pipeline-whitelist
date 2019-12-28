@@ -65,7 +65,6 @@ StackTraceElement[] getStackTrace(Throwable e) {
 // do not use @NonCPS otherwise the stack is not what we want
 // blacklisted signature : new java.lang.Throwable
 // blacklisted signature : staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods drop java.lang.Object[] int
-@NonCPS
 StackTraceElement[] getCurrentStackTrace() {
     // remove the first one (the one from current function getCurrentStackTrace)
     return getStackTrace(new Throwable()).drop(1)
@@ -129,7 +128,7 @@ StackTraceElement[] filterStackTrace(StackTraceElement[] st) {
 // if exception does not contain any stackTrace with user's script in it
 // append it with a "suppressed" exception with the current stackTrace
 // suppressed exceptions are here to help find the root cause
-@NonCPS
+// do not use @NonCPS (getCurrentStackTrace does not allow it)
 void addTraceableStackTrace(Throwable e) {
     if (
         filterStackTrace(getStackTrace(e)).size() == 0 &&
