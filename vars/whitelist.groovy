@@ -66,7 +66,7 @@ StackTraceElement[] getStackTrace(Throwable e) {
 // blacklisted signature : new java.lang.Throwable
 // blacklisted signature : staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods drop java.lang.Object[] int
 StackTraceElement[] getCurrentStackTrace() {
-    // remove the first one (getCurrentStackTrace)
+    // remove the first one (the one from current function getCurrentStackTrace)
     return getStackTrace(new Throwable()).drop(1)
 }
 
@@ -102,6 +102,45 @@ Integer getLineNumber(StackTraceElement element) {
 // blacklisted signature : method java.lang.Class getSuperclass
 Class getSuperclass(Class c) {
     return c.getSuperclass()
+}
+
+// access list of suppressed exceptions (needed to access their stackTrace)
+@NonCPS
+Throwable[] getSuppressed(Throwable e) {
+    return e.getSuppressed()
+}
+
+// filter elements not belonging to a user script
+// to help track where it came from in user's code
+@NonCPS
+StackTraceElement[] filterStackTrace(StackTraceElement[] st) {
+    // filter only stack lines with filename
+    // - WorkflowScript (the actual pipeline script)
+    // - or Script1, Script2, etc ... (scripts loaded inside pipeline)
+    return st.findAll {
+        // keep only the ones from WorkflowScript, Script1.groovy, Script2.groovy, ...
+        def filename = whitelist.getFileName(it)
+        return filename == 'WorkflowScript' ||
+            ( filename != null && filename.find(/^Script[0-9]+.groovy$/) )
+    }
+}
+
+// if exception does not contain any stackTrace with user's script in it
+// append it with a "suppressed" exception with the current stackTrace
+// suppressed exceptions are here to help find the root cause
+@NonCPS
+void addTraceableStackTrace(Throwable e) {
+    if (
+        filterStackTrace(getStackTrace(e)).size() == 0 &&
+        getSuppressed(e).findAll {
+            filterStackTrace(getStackTrace(it)).size() > 0
+        }.size() == 0
+    ) {
+        def showUserStack = new Exception("workarround to show user stackTrace")
+        // filter to show only stackTraceElements from user's script leading up to here
+        showUserStack.setStackTrace(filterStackTrace(getCurrentStackTrace()))
+        e.addSuppressed(showUserStack)
+    }
 }
 
 //********
