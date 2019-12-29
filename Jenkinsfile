@@ -4,7 +4,11 @@
 // import whitelist library
 @Library('pipeline-whitelist@master') _
 
-// sort list of maps by field
+// label which exist on the instance, has linux hosts
+// null if all hosts fit the description
+LABEL_LINUX=null
+
+// sort list of maps by field must be done in @NonCPS method
 // https://issues.jenkins-ci.org/browse/JENKINS-44924
 @NonCPS
 def sortByField(list, fieldName) {
@@ -40,10 +44,83 @@ def testStringManipulation() {
         "whitelist.escapeHtml4('\">&<') gives an unexpected result: '${result}', expected: '${expected}'"
 }
 
+
+// utility function to check exceptions
+// beforeExcStackTrace is the stack one line before the exception
+// if exceptionInStack is false:
+//   we expect that the stack does not contain the line causing the issue in it
+//   (assert would cause that for example, unfortunately)
+def catchAndCheckException(
+    Throwable e,
+    StackTraceElement[] beforeExcStackTrace,
+    Class expectedClass,
+    Boolean exceptionInStack,
+    Boolean exceptionFirstInStack
+) {
+    print 'checking exception'
+
+    print "class = ${e.class}"
+    assert e.class == expectedClass, "${e.class} does not match expected ${expectedClass}"
+
+    def excStackTrace = whitelist.getStackTrace(e)
+    print "${expectedClass} stacktrace = \n\t${ excStackTrace.collect { it.toString() }.join('\n\t') }"
+    assert excStackTrace.size() != 0, 'stacktrace is empty'
+
+    def excFilteredStackTrace = whitelist.filterStackTrace(excStackTrace)
+    print "${expectedClass} filtered stacktrace = \n\t${ excFilteredStackTrace.collect { it.toString() }.join('\n\t') }"
+
+    def suppressed = whitelist.getSuppressed(e)
+    print "suppressed exceptions = \n${ suppressed.collect{ "${it}\n\t${ whitelist.getStackTrace(it).collect { it.toString() }.join('\n\t') }" }.join('\n') }"
+
+    // the line of syntax error is not the exception itself (not the first one): look for it in the stack
+    assert beforeExcStackTrace != null
+    assert beforeExcStackTrace.size() > 0
+    def excLine = whitelist.getLineNumber(beforeExcStackTrace[0]) + 1
+    def currentClass = whitelist.getClassName(beforeExcStackTrace[0])
+    def currentMethod = whitelist.getMethodName(beforeExcStackTrace[0])
+    def currentFile = whitelist.getFileName(beforeExcStackTrace[0])
+    def expected = "${currentClass}.${currentMethod}(${currentFile}:${excLine})"
+
+    if (exceptionInStack) {
+        assert suppressed.size() == 0, 'suppressed is not empty'
+
+        if (exceptionFirstInStack) {
+            assert excStackTrace[0].toString() == expected.toString(),
+                "'${expected}' not first item in stacktrace"
+        } else {
+            // the line of syntax error is not the exception itself (not the first one): look for it in the stack
+            assert excStackTrace.collect{ it.toString() }.contains(expected.toString()),
+                "'${expected}' not found in stacktrace"
+        }
+
+        // after filtering, the line of the exception is the first one
+        assert excFilteredStackTrace.size() != 0,
+            'filtered stacktrace is empty'
+        assert excFilteredStackTrace[0].toString() == expected.toString(),
+            "'${expected}' not first item in filtered stacktrace"
+    } else {
+        // after filtering the stack is empty (which is why we have a suppressed not empty)
+        assert excFilteredStackTrace.size() == 0,
+            'filtered stacktrace is not empty'
+
+        assert suppressed.size() != 0, 'suppressed exception list is empty'
+        // TODO : handle more than 1 ? not needed for now
+        assert suppressed.size() == 1, 'suppressed exception list has more than 1 element'
+
+        def suppressedStackTrace = whitelist.getStackTrace(suppressed[0])
+        assert suppressedStackTrace.size() != 0,
+            'suppressed stacktrace is empty'
+
+        assert suppressedStackTrace[0].toString() == expected.toString(),
+            "'${expected}' not first item in suppressed stacktrace"
+    }
+}
+
 def testMetaDataAccess() {
     print 'testing metadata accessors'
 
-    // stack, class, method, file and line number
+
+    // test stack, class, method, file and line number
 
     def currentStackTrace = whitelist.getCurrentStackTrace()
     print "current stacktrace = \n\t${currentStackTrace.collect { it.toString() }.join('\n\t')}"
@@ -69,86 +146,125 @@ def testMetaDataAccess() {
     assert currentStackElement.toString() == expected, message
 
 
+    // test filtering
+
+    def filteredCurrentStackTrace = whitelist.filterStackTrace(currentStackTrace)
+    print "filtered current stacktrace = \n\t${filteredCurrentStackTrace.collect { it.toString() }.join('\n\t')}"
+
+    def filteredCurrentStackElement = filteredCurrentStackTrace[0]
+    print "first filtered stacktrace element = ${filteredCurrentStackElement}"
+
+    assert filteredCurrentStackElement == currentStackElement,
+        'filtering failed, wrong first element ${filteredCurrentStackElement}'
+
+
     // test various kind of Exceptions and Errors
-    def excStackTrace = null
+
     def beforeExcStackTrace = null
-    def excLine = null
 
     // syntax error (groovy.lang.MissingPropertyException)
-    excStackTrace = null
     beforeExcStackTrace = null
     try {
         beforeExcStackTrace = whitelist.getCurrentStackTrace()
         this_is_a syntax_error
     } catch (e) {
-        print "caught ${e.class}"
-        assert e.class == groovy.lang.MissingPropertyException
-        excStackTrace = whitelist.getStackTrace(e)
+        print "caught ${e}"
+
+        // append stackTrace in a suppressed exception if needed
+        whitelist.addTraceableStackTrace(e)
+
+        catchAndCheckException(
+            e,
+            beforeExcStackTrace,
+            groovy.lang.MissingPropertyException,
+            true,
+            false
+        )
     }
-    assert excStackTrace != null, 'could not get stack trace for syntax error'
-    print "syntax error stacktrace = \n\t${excStackTrace.collect { it.toString() }.join('\n\t')}"
-    // the line of syntax error is not the exception itself: look for it in the stack
-    excLine = whitelist.getLineNumber(beforeExcStackTrace[0]) + 1
-    expected = "${currentClass}.${currentMethod}(${currentFile}:${excLine})"
-    assert excStackTrace.collect{ it.toString() }.contains(expected.toString()),
-        "'${expected}' not found in stacktrace"
 
     // no such method error (java.lang.NoSuchMethodError)
-    excStackTrace = null
     beforeExcStackTrace = null
     try {
         beforeExcStackTrace = whitelist.getCurrentStackTrace()
         this_is_an_error()
     } catch (Error e) {
-        print "caught ${e.class}"
-        assert e.class == java.lang.NoSuchMethodError
-        excStackTrace = whitelist.getStackTrace(e)
+        print "caught ${e}"
+
+        // append stackTrace in a suppressed exception if needed
+        whitelist.addTraceableStackTrace(e)
+
+        catchAndCheckException(
+            e,
+            beforeExcStackTrace,
+            java.lang.NoSuchMethodError,
+            true,
+            false
+        )
     }
-    assert excStackTrace != null, 'could not get stack trace for error'
-    print "error stacktrace = \n\t${excStackTrace.collect { it.toString() }.join('\n\t')}"
-    // the line of syntax error is not the exception itself: look for it in the stack
-    excLine = whitelist.getLineNumber(beforeExcStackTrace[0]) + 1
-    expected = "${currentClass}.${currentMethod}(${currentFile}:${excLine})"
-    assert excStackTrace.collect{ it.toString() }.contains(expected.toString()),
-        "'${expected}' not found in stacktrace"
 
     // plain exception
-    excStackTrace = null
     beforeExcStackTrace = null
     try {
         beforeExcStackTrace = whitelist.getCurrentStackTrace()
         throw new Exception('this is an exception')
     } catch (e) {
-        print e.class
-        assert e.class == java.lang.Exception
-        excStackTrace = whitelist.getStackTrace(e)
+        print "caught ${e}"
+
+        // append stackTrace in a suppressed exception if needed
+        whitelist.addTraceableStackTrace(e)
+
+        catchAndCheckException(
+            e,
+            beforeExcStackTrace,
+            java.lang.Exception,
+            true,
+            true
+        )
     }
-    assert excStackTrace != null, 'could not get stack trace for exception'
-    print "exception stacktrace = \n\t${excStackTrace.collect { it.toString() }.join('\n\t')}"
-    // the line of the exception must be the first one in the stack
-    excLine = whitelist.getLineNumber(beforeExcStackTrace[0]) + 1
-    expected = "${currentClass}.${currentMethod}(${currentFile}:${excLine})"
-    assert excStackTrace[0].toString() == expected.toString(), "'${expected}' not the first item of stacktrace"
 
     // error statement (hudson.AbortException)
-    excStackTrace = null
     beforeExcStackTrace = null
     try {
         beforeExcStackTrace = whitelist.getCurrentStackTrace()
         error 'this is an error'
     } catch (e) {
-        print e.class
-        assert e.class == hudson.AbortException
-        excStackTrace = whitelist.getStackTrace(e)
-    }
-    assert excStackTrace != null, 'could not get stack trace for error'
-    print "error stacktrace = \n\t${excStackTrace.collect { it.toString() }.join('\n\t')}"
-    // the line of the error must be the first one in the stack
-    excLine = whitelist.getLineNumber(beforeExcStackTrace[0]) + 1
-    expected = "${currentClass}.${currentMethod}(${currentFile}:${excLine})"
-    assert excStackTrace.collect{ it.toString() }.contains(expected.toString()),
-        "'${expected}' not found in stacktrace"
+        print "caught ${e}"
 
+        // append stackTrace in a suppressed exception if needed
+        whitelist.addTraceableStackTrace(e)
+
+        catchAndCheckException(
+            e,
+            beforeExcStackTrace,
+            hudson.AbortException,
+            true,
+            false
+        )
+    }
+
+    // error statement (org.codehaus.groovy.runtime.powerassert.PowerAssertionError)
+    // without the exception in the stack (maybe this is a bug but sometimes it happens. thus whitelist.addTraceableStackTrace)
+    beforeExcStackTrace = null
+    try {
+        assert 1 == 0
+    } catch (Error e) {
+        print "caught ${e}"
+
+        // append stackTrace in a suppressed exception if needed
+        beforeExcStackTrace = whitelist.getCurrentStackTrace()
+        whitelist.addTraceableStackTrace(e)
+
+        catchAndCheckException(
+            e,
+            beforeExcStackTrace,
+            org.codehaus.groovy.runtime.powerassert.PowerAssertionError,
+            false,
+            false
+        )
+    }
+
+
+    // test superclass
 
     print "superclass of String = ${whitelist.getSuperclass(String)}"
     assert whitelist.getSuperclass(String) == Object,
@@ -248,7 +364,7 @@ def testJobFilesAccess() {
     print "pipeline script = \n\t${scripts.script.split('\n').join('\n\t')}"
     assert scripts.loadedScripts.size() == 0
 
-    node() {
+    node(LABEL_LINUX) {
         writeFile file: 'toload1', text: 'echo "this is a loaded script"'
         load 'toload1'
     }
@@ -257,7 +373,7 @@ def testJobFilesAccess() {
     print "pipeline loadedScripts = \n\t${ scripts.loadedScripts.collect{ k, v -> "$k:\n\t\t${v.split('\n').join('\n\t\t')}" }.join('\n\t') }"
     assert scripts.loadedScripts.Script1 == 'echo "this is a loaded script"'
 
-    node() {
+    node(LABEL_LINUX) {
         writeFile file: 'toload2', text: 'echo "this is another loaded script"'
         load 'toload2'
     }
