@@ -164,9 +164,7 @@ String getRawBuildLog(RunWrapper build = currentBuild) {
 // blacklisted signature : method hudson.model.Run getLog
 // blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build) {
-    // cf https://stackoverflow.com/questions/40016424/remove-null-values-and-empty-maps-from-map-of-maps-to-undefined-depth-in-groov
-    // .findAll { k, v -> v } to remove empty entries (otherwise logs from axis from other parents come up)
-    return build.rawBuild.runs.collectEntries{ it.parentBuild == build.rawBuild ? [(it.externalizableId): it.log] : [] }.findAll { k, v -> v }
+    return build.rawBuild.runs.findAll{ it.parentBuild == build.rawBuild }.collectEntries{ [(it.externalizableId): it.log] }
 }
 
 //*****************
@@ -181,12 +179,22 @@ java.util.LinkedHashMap getJobs() {
 
     // add multiconf children jobs
     Jenkins.getInstance().getItems().findAll{
-        it instanceof org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
-    }.each{ jobs += it.items }
+        ! (it instanceof hudson.model.Job)
+    }.each{
+        // make sure this is a type we know of
+        assert it instanceof org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject, "unsupported class for item ${it.class}"
+        jobs += it.items
+    }
 
-    // DO NOT add matrix children jobs (or may be we  should ?)
+    // DO NOT add matrix configurations (children jobs of MatrixProject), they can be retrieved by getMatrixConfiguration
 
     return jobs.collectEntries{ [(it.fullName): it] }
+}
+
+// to be used in conjonction with getJobs().findAll{ k, v -> v instanceof hudson.matrix.MatrixProject }
+@NonCPS
+java.util.LinkedHashMap getMatrixConfiguration(hudson.matrix.MatrixProject job) {
+    return job.items.collectEntries{ [(it.fullName): it] }
 }
 
 @NonCPS
