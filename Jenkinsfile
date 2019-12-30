@@ -282,18 +282,19 @@ def testLog() {
     assert whitelist.getRawBuildLog(currentBuild).contains('mark logs'), 'mark logs not found in logs'
     print 'OK marker found in logs'
 
-    // TODO find matrix job on the instance (if any) and try to call getRawMatrixRunsLog
-    /*
-    def jobResult = build job: 'testmatrix'
-    assert whitelist.getRawMatrixRunsLog(jobResult).keySet().sort == ['axis1', 'axis2']
-    whitelist.getRawMatrixRunsLog(jobResult).collect{ k,v -> assert v.contains('titi') }
-    */
+    // whitelist.getRawMatrixRunsLog() is tested through samples/MatrixAccess.groovy
+    // (which requires script approval by admin: too inconvenient to test here)
+    // (TODO: find a better way to test it)
 }
 
 def testJobsAndBuilds() {
     def jobs = whitelist.getJobs()
     print "jobs : \n\t${jobs.collect{ it.toString() }.join('\n\t')}"
     assert jobs."${env.JOB_NAME}" != null, "${env.JOB_NAME} not in job list"
+
+    // whitelist.getMatrixConfiguration() is tested through samples/MatrixAccess.groovy
+    // (which requires script approval by admin: too inconvenient to test here)
+    // (TODO: find a better way to test it)
 
     def job = whitelist.getJobByName(env.JOB_NAME)
     print "getJobByName(${env.JOB_NAME}) == ${job}"
@@ -358,7 +359,7 @@ def testJobFilesAccess() {
     def text = whitelist.unArchiveStringArtifact('artifact1.txt')
     assert text == 'text in artifact'
 
-    print "job config = \n\t${whitelist.getJobConfig().split('\n').join('\n\t')}"
+    print "job config = \n\t${ whitelist.getJobConfig().split('\n').join('\n\t') }"
 
     def scripts = whitelist.getBuildPipelineScripts()
     print "pipeline script = \n\t${scripts.script.split('\n').join('\n\t')}"

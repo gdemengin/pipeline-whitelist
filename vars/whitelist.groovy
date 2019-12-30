@@ -36,14 +36,12 @@ List<java.util.LinkedHashMap> plugins() {
 // multiply string by a number
 // should not be blacklisted ...
 @NonCPS
-// blacklisted signature : staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods multiply java.lang.String java.lang.Number
 String multiply(String lhs, Integer rhs) {
     return lhs*rhs
 }
 
-@NonCPS
-// blacklisted signature : staticMethod org.apache.commons.text.StringEscapeUtils escapeHtml4 java.lang.String
 // should not be blacklisted ...
+@NonCPS
 String escapeHtml4(String input) {
     return StringEscapeUtils.escapeHtml4(input)
 }
@@ -55,51 +53,38 @@ String escapeHtml4(String input) {
 
 // get sanitized list of StackTraceElement for exception
 @NonCPS
-// blacklisted signature : method java.lang.Throwable getStackTrace
-// blacklisted signature : staticMethod org.codehaus.groovy.runtime.StackTraceUtils sanitize java.lang.Throwable
 StackTraceElement[] getStackTrace(Throwable e) {
     return StackTraceUtils.sanitize(e).stackTrace
 }
 
 // get sanitized list of StackTraceElement for current location
 // do not use @NonCPS otherwise the stack is not what we want
-// blacklisted signature : new java.lang.Throwable
-// blacklisted signature : staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods drop java.lang.Object[] int
 StackTraceElement[] getCurrentStackTrace() {
     // remove the first one (the one from current function getCurrentStackTrace)
     return getStackTrace(new Throwable()).drop(1)
 }
 
-// get method name from StackTraceElement
 @NonCPS
-// blacklisted signature : method java.lang.StackTraceElement getMethodName
 String getMethodName(StackTraceElement element) {
     return element.methodName
 }
 
-// get class name from StackTraceElement
 @NonCPS
-// blacklisted signature : method java.lang.StackTraceElement getClassName
 String getClassName(StackTraceElement element) {
     return element.className
 }
 
-// get file name from the Nth function/method in the stack (0 = last calling function/method)
 @NonCPS
-// blacklisted signature : method java.lang.StackTraceElement getFileName
 String getFileName(StackTraceElement element) {
     return element.fileName
 }
 
-// get line number from the Nth function/method in the stack (0 = last calling function/method)
 @NonCPS
-// blacklisted signature : method java.lang.StackTraceElement getLineNumber
 Integer getLineNumber(StackTraceElement element) {
     return element.lineNumber
 }
 
 @NonCPS
-// blacklisted signature : method java.lang.Class getSuperclass
 Class getSuperclass(Class c) {
     return c.getSuperclass()
 }
@@ -127,7 +112,7 @@ StackTraceElement[] filterStackTrace(StackTraceElement[] st) {
 
 // if exception does not contain any stackTrace with user's script in it
 // append it with a "suppressed" exception with the current stackTrace
-// suppressed exceptions are here to help find the root cause
+// (as suppressed exceptions can be used to help find the root cause of the exception)
 // do not use @NonCPS (getCurrentStackTrace does not allow it)
 void addTraceableStackTrace(Throwable e) {
     if (
@@ -149,8 +134,6 @@ void addTraceableStackTrace(Throwable e) {
 
 // get raw log from build (default current)
 @NonCPS
-// blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
-// blacklisted signature : method hudson.model.Run getLog
 String getRawBuildLog(RunWrapper build = currentBuild) {
     return build.rawBuild.log
 }
@@ -158,11 +141,6 @@ String getRawBuildLog(RunWrapper build = currentBuild) {
 // get raw log from matrix build (map axisId:log)
 // shall fail if build is not the runWrapper of a matrix build
 @NonCPS
-// blacklisted signature : method hudson.matrix.MatrixBuild getRuns
-// blacklisted signature : method hudson.matrix.MatrixRun getParentBuild
-// blacklisted signature : method hudson.model.Run getExternalizableId
-// blacklisted signature : method hudson.model.Run getLog
-// blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build) {
     return build.rawBuild.runs.findAll{ it.parentBuild == build.rawBuild }.collectEntries{ [(it.externalizableId): it.log] }
 }
@@ -210,9 +188,6 @@ List<Integer> getRunIds(hudson.model.Job job) {
 
 // get run wrapper from build by name/id
 @NonCPS
-// blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
-// blacklisted signature : method jenkins.model.Jenkins getItemByFullName java.lang.String
-// blacklisted signature : method hudson.model.Job getBuildByNumber int
 RunWrapper getRunWrapper(hudson.model.Job job, Integer runId) {
     def rawBuild = job.getBuildByNumber(runId)
     return rawBuild ? new RunWrapper(rawBuild, false) : null
@@ -225,9 +200,6 @@ RunWrapper getRunWrapper(hudson.model.Job job, String runId) {
 
 // get run wrapper from last build by name
 @NonCPS
-// blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
-// blacklisted signature : method jenkins.model.Jenkins getItemByFullName java.lang.String
-// blacklisted signature : method hudson.model.Job getLastBuild
 RunWrapper getLastRunWrapper(hudson.model.Job job) {
     def rawBuild = job.getLastBuild()
     return rawBuild ? new RunWrapper(rawBuild, false) : null
@@ -235,9 +207,6 @@ RunWrapper getLastRunWrapper(hudson.model.Job job) {
 
 // get run wrapper from last stable build by name
 @NonCPS
-// blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
-// blacklisted signature : method jenkins.model.Jenkins getItemByFullName java.lang.String
-// blacklisted signature : method hudson.model.Job getLastStableBuild
 RunWrapper getLastStableRunWrapper(hudson.model.Job job) {
     def rawBuild = job.getLastStableBuild()
     return rawBuild ? new RunWrapper(rawBuild, false) : null
@@ -252,9 +221,6 @@ RunWrapper getLastStableRunWrapper(hudson.model.Job job) {
 // get list of startup causes
 // OBSOLETE: use RunWrapper.getBuildCauses.collect{ it.getShortDescription() }
 @NonCPS
-// blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
-// blacklisted signature : method hudson.model.Run getCauses
-// blacklisted signature : method hudson.model.Cause getShortDescription
 List<String> getBuildStartupCauses(RunWrapper build = currentBuild) {
     return build.rawBuild.causes.collect{ it.getShortDescription() }
 }
@@ -263,24 +229,18 @@ List<String> getBuildStartupCauses(RunWrapper build = currentBuild) {
 //     RunWrapper.getBuildCauses(hudson.triggers.SCMTrigger$SCMTriggerCause) != null ||
 //     RunWrapper.getBuildCauses('jenkins.branch.BranchIndexingCause') != null
 @NonCPS
-// blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
-// blacklisted signature : method hudson.model.Run getCause java.lang.Class
 Boolean isJobStartedByScm(RunWrapper build = currentBuild) {
     return (build.rawBuild.getCause(hudson.triggers.SCMTrigger$SCMTriggerCause) != null) || (build.rawBuild.getCause(jenkins.branch.BranchIndexingCause) != null)
 }
 
 // OBSOLETE: use RunWrapper.getBuildCauses('hudson.model.Cause$UserIdCause') != null
 @NonCPS
-// blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
-// blacklisted signature : method hudson.model.Run getCause java.lang.Class
 Boolean isJobStartedManually(RunWrapper build = currentBuild) {
     return build.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null
 }
 
 // OBSOLETE: use RunWrapper.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') != null
 @NonCPS
-// blacklisted signature : method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
-// blacklisted signature : method hudson.model.Run getCause java.lang.Class
 Boolean isJobStartedByTimer(RunWrapper build = currentBuild) {
     return build.rawBuild.getCause(hudson.triggers.TimerTrigger$TimerTriggerCause) != null
 }
@@ -291,20 +251,6 @@ Boolean isJobStartedByTimer(RunWrapper build = currentBuild) {
 
 // expose useful (and public/harmless) properties of node (and computer object below node)
 @NonCPS
-// blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
-// blacklisted signature : method hudson.model.AbstractCIBase getNodes
-// blacklisted signature : method hudson.model.Node getSelfLabel
-// blacklisted signature : method hudson.model.Node getAssignedLabels
-// blacklisted signature : field hudson.model.Slave name
-// blacklisted signature : method hudson.model.Slave getComputer
-// blacklisted signature : method hudson.model.Computer getNumExecutors
-// blacklisted signature : method hudson.model.Computer countBusy
-// blacklisted signature : method hudson.model.Computer isOffline
-// blacklisted signature : method hudson.model.Computer isTemporarilyOffline
-// blacklisted signature : method hudson.model.Computer getOfflineCause
-// blacklisted signature : method jenkins.model.Jenkins getLabel java.lang.String
-// blacklisted signature : method hudson.model.Label getNodes
-// blacklisted signature : method jenkins.model.Jenkins getComputers
 List<java.util.LinkedHashMap> getNodes(String label = null) {
     def nodes
     if (label == null) {
@@ -395,15 +341,6 @@ Boolean isDockerTransientNode(node) {
 
 // expose useful (and public/harmless) properties of labels (and cloud objects below)
 @NonCPS
-// blacklisted signature : staticMethod jenkins.model.Jenkins getInstance
-// blacklisted signature : method jenkins.model.Jenkins getLabels
-// blacklisted signature : method hudson.model.Label getName
-// blacklisted signature : method hudson.model.Label getClouds
-// blacklisted signature : method com.nirima.jenkins.plugins.docker.DockerCloud getContainerCap
-// blacklisted signature : method com.nirima.jenkins.plugins.docker.DockerCloud getTemplates
-// blacklisted signature : method com.nirima.jenkins.plugins.docker.DockerTemplate getLabelString
-// blacklisted signature : method com.nirima.jenkins.plugins.docker.DockerTemplate getInstanceCap
-// blacklisted signature : method com.nirima.jenkins.plugins.docker.DockerTemplate getImage
 List<java.util.LinkedHashMap> getLabels() {
     return jenkins.model.Jenkins.instance.labels.collect{
         def nameVar = it.name

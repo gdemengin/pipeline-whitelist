@@ -23,4 +23,20 @@ pipeline-whitelist is meant to be used as a "Global Pipeline Library"
 ## documentation
 
 - see 'whitelist' documentation in $JOB_URL/pipeline-syntax/globals (visible only after the library has been imported once)
-- or see [whitelist.html](./vars/whitelist.html)
+- or see [whitelist.txt](./vars/whitelist.txt)
+
+## change log
+
+* 1.0 (12/2019) first version with functions to:
+  - get version (jenkins and plugins)
+  - do various string manipulation (escape HTML, multiply)
+  - access (R/O) metadata (stacktrace, superclass, ...)
+  - access (R/O) logs
+  - access (R/O) jobs and runs and startup causes
+  - access (R/O) nodes and labels
+  - access (R/W) build artifacts without workspace
+  - access (R/O) job config and pipeline scripts
+  - implement Semaphore
+  - provide samples
+    * a function wrapper to print logs with methodName and line number
+    * example of use with matrix jobs
