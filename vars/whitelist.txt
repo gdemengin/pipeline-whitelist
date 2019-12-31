@@ -86,7 +86,7 @@
                 (convenient when tracking the origin of an exception for example)<br>
                 <br>
                 example:<br>
-                &nbsp;&nbsp;- <b>before</b>java.lang.NoSuchMethodError stacktrace<br>
+                &nbsp;&nbsp;- <b>before</b> java.lang.NoSuchMethodError stacktrace<br>
                 <code>
                 &nbsp;&nbsp;&nbsp;&nbsp;org.jenkinsci.plugins.workflow.cps.DSL.invokeMethod(DSL.java:202)<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;org.jenkinsci.plugins.workflow.cps.CpsScript.invokeMethod(CpsScript.java:122)<br>
@@ -121,7 +121,7 @@
                 &nbsp;&nbsp;&nbsp;&nbsp;jenkins.util.ContextResettingExecutorService$1.run(ContextResettingExecutorService.java:28)<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;jenkins.security.ImpersonatingExecutorService$1.run(ImpersonatingExecutorService.java:59)<br>
                 </code>
-                &nbsp;&nbsp;- <b>after</b>java.lang.NoSuchMethodError filtered stacktrace = <br>
+                &nbsp;&nbsp;- <b>after</b> java.lang.NoSuchMethodError filtered stacktrace<br>
                 <code>
                 &nbsp;&nbsp;&nbsp;&nbsp;WorkflowScript.testMetaDataAccess(WorkflowScript:189)<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;WorkflowScript.run(WorkflowScript:439)<br>
@@ -285,8 +285,8 @@
                 tests who started the job<br>
                 <b>OBSOLETE</b> (kept for compatibility): with newer versions of jenkins:<br>
                 - for <code>isJobStartedByScm()<code> use <code>RunWrapper.getBuildCauses('hudson.triggers.SCMTrigger$SCMTriggerCause') != null || RunWrapper.getBuildCauses('jenkins.branch.BranchIndexingCause') != null</code><br>
-                - for <code>isJobStartedManually()<code> use <code>RunWrapper.getBuildCauses('hudson.model.Cause$UserIdCause') != null</code><br>
-                - for <code>isJobStartedByTimer()<code> use <code>RunWrapper.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') != null</code>
+                - for <code>isJobStartedManually()</code> use <code>RunWrapper.getBuildCauses('hudson.model.Cause$UserIdCause') != null</code><br>
+                - for <code>isJobStartedByTimer()</code> use <code>RunWrapper.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') != null</code>
             <p>
         </dd>
     </dl>
