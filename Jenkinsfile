@@ -328,31 +328,6 @@ def testJobsAndBuilds() {
         'something unexpected happened: the build was not started by scm, timer or human'
 }
 
-def testNodesAndLabels() {
-    print "nodes : \n\t${whitelist.getNodes().collect { it.toString() }.join('\n\t')}"
-    assert whitelist.getNodes().size() != 0
-
-    for (node in whitelist.getNodes()) {
-        assert whitelist.isMaster(node) || whitelist.isDumbSlave(node) || whitelist.isDockerTransientNode(node)
-    }
-
-    assert whitelist.getNodes('wrongLabelDoesNotExist').size() == 0
-
-    // master may not be in the list returned by getLabels but it is a label of one element
-    assert whitelist.getNodes('master').size() == 1
-    assert whitelist.isMaster(whitelist.getNodes('master')[0])
-
-    print "labels : \n\t${whitelist.getLabels().collect { it.toString() }.join('\n\t')}"
-
-    assert whitelist.getLabels().size() != 0
-
-    // make sure we can call getNodes (no exception) on all labels
-    for (label in whitelist.getLabels().collect{ it.name }) {
-        print "nodes for label ${label} : \n\t${whitelist.getNodes(label).collect { it.toString() }.join('\n\t')}"
-    }
-}
-
-
 def testJobFilesAccess() {
     print 'testing archive/unarchive'
     whitelist.archiveStringArtifact('artifact1.txt', 'text in artifact')
@@ -385,12 +360,37 @@ def testJobFilesAccess() {
     print "pipeline loadedScripts = \n\t${ scripts.loadedScripts.collect{ k, v -> "$k:\n\t\t${v.split('\n').join('\n\t\t')}" }.join('\n\t') }"
 }
 
+def testNodesAndLabels() {
+    print "nodes : \n\t${whitelist.getNodes().collect { it.toString() }.join('\n\t')}"
+    assert whitelist.getNodes().size() != 0
+
+    for (node in whitelist.getNodes()) {
+        assert whitelist.isMaster(node) || whitelist.isDumbSlave(node) || whitelist.isDockerTransientNode(node)
+    }
+
+    assert whitelist.getNodes('wrongLabelDoesNotExist').size() == 0
+
+    // master may not be in the list returned by getLabels but it is a label of one element
+    assert whitelist.getNodes('master').size() == 1
+    assert whitelist.isMaster(whitelist.getNodes('master')[0])
+
+    print "labels : \n\t${whitelist.getLabels().collect { it.toString() }.join('\n\t')}"
+
+    assert whitelist.getLabels().size() != 0
+
+    // make sure we can call getNodes (no exception) on all labels
+    for (label in whitelist.getLabels().collect{ it.name }) {
+        print "nodes for label ${label} : \n\t${whitelist.getNodes(label).collect { it.toString() }.join('\n\t')}"
+    }
+}
+
+
 def testSemaphore() {
     print 'test semaphore'
     timeout(time: 30, unit: 'SECONDS') {
         def s = whitelist.semaphore(1)
         whitelist.acquireSemaphore(s)
-        whitelist. releaseSemaphore(s)
+        whitelist.releaseSemaphore(s)
 
         s = whitelist.semaphore(1)
         def b1 = 0
@@ -406,7 +406,7 @@ def testSemaphore() {
                 assert b2 == 0
                 didWait = true
             }
-            whitelist. releaseSemaphore(s)
+            whitelist.releaseSemaphore(s)
         }, b2: {
             whitelist.acquireSemaphore(s)
             b2 = 1
@@ -417,7 +417,7 @@ def testSemaphore() {
                 assert b1 == 0
                 didWait = true
             }
-            whitelist. releaseSemaphore(s)
+            whitelist.releaseSemaphore(s)
         }, failFast: true
 
         // this assert would fail if both branches did go passed the acquire at the same time

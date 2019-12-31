@@ -5,13 +5,37 @@
         <a href="https://github.com/gdemengin/pipeline-whitelist">pipeline-whitelist</a> a library to expose useful functions (blacklisted by default in jenkins) which should be whitelisted IMHO
     </p>
     <p>
+        <b>Instance and plugins versions</b>
+    </p>
+    <dl>
+        <dt><code>String version()</code></dt>
+        <dd>
+            <p>
+                get instance version
+            <p>
+        </dd>
+        <dt><code>List<java.util.LinkedHashMap> plugins()</code></dt>
+        <dd>
+            <p>
+                get list dictionaries with plugins name and version<br>
+                format: <code>[ [ displayName: name, shortName: name, version: v ]* ]</code>
+            <p>
+        </dd>
+    </dl>
+    <p>
         <b>String manipulation</b>
     </p>
     <dl>
         <dt><code>String multiply(String lhs, Integer rhs)</code></dt>
         <dd>
             <p>
-                multiply String by Integer
+                <code>return lhs*rhs</code>
+            <p>
+        </dd>
+        <dt><code>String escapeHtml4(String input)</code></dt>
+        <dd>
+            <p>
+                <code>return org.apache.commons.lang3.StringEscapeUtils.escapeHtml4(input)</code>
             <p>
         </dd>
     </dl>
@@ -48,6 +72,71 @@
                 get superclass
             </p>
         </dd>
+        <dt><code>Throwable[] getSuppressed(Throwable e)</code></dt>
+        <dd>
+            <p>
+                get suppressed exceptions
+            </p>
+        </dd>
+        <dt><code>StackTraceElement[] filterStackTrace(StackTraceElement[] st)</code></dt>
+        <dd>
+            <p>
+                filter stackTrace to keep only the ones coming from user's scripts (WorkflowScript and ScriptN.groovy)<br>
+                to provide a more comprehensive list of stackTraceElements with only user's code<br>
+                (convenient when tracking the origin of an exception for example)
+            </p>
+        </dd>
+        <dt><code>void addTraceableStackTrace(Throwable e)</code></dt>
+        <dd>
+            <p>
+                if exception does not contain any stackTrace with user's script in it (i.e. filterStackTrace return is empty)<br>
+                append it with a "suppressed" exception with the current stackTrace<br>
+                (as suppressed exceptions can be used to help find the root cause of the exception)<br>
+                <br>
+                NB: some Errors (for example "assert") do not show any stackTrace for the statement in the user's code<br>
+                <br>
+                example:<br>
+                <code>
+                    try {<br>
+                        assert 1 == 0<br>
+                    } catch(Error e) {<br>
+                        whitelist.addTraceableStackTrace(e)<br>
+                        throw e<br>
+                    }<br>
+                </code>
+                <br>
+                result shows "WorkflowScript.run(WorkflowScript:5)" :<br>
+                <code>
+                    [Pipeline] Start of Pipeline<br>
+                    [Pipeline] End of Pipeline<br>
+                    Also:   hudson.remoting.ProxyException: java.lang.Exception: workarround to show user stackTrace<br>
+                            at WorkflowScript.run(WorkflowScript:5)<br>
+                    hudson.remoting.ProxyException: Assertion failed:<br>
+                    <br>
+                    assert 1 == 0<br>
+                    <br>
+                        at com.cloudbees.groovy.cps.impl.AssertBlock$ContinuationImpl.fail(AssertBlock.java:47)<br>
+                        at com.cloudbees.groovy.cps.impl.ContinuationPtr$ContinuationImpl.receive(ContinuationPtr.java:72)<br>
+                        at com.cloudbees.groovy.cps.impl.ConstantBlock.eval(ConstantBlock.java:21)<br>
+                        at com.cloudbees.groovy.cps.Next.step(Next.java:83)<br>
+                        at com.cloudbees.groovy.cps.Continuable$1.call(Continuable.java:174)<br>
+                        at com.cloudbees.groovy.cps.Continuable$1.call(Continuable.java:163)<br>
+                        at com.cloudbees.groovy.cps.Continuable.run0(Continuable.java:163)<br>
+                        at org.jenkinsci.plugins.workflow.cps.SandboxContinuable.access$001(SandboxContinuable.java:18)<br>
+                        at org.jenkinsci.plugins.workflow.cps.SandboxContinuable.run0(SandboxContinuable.java:51)<br>
+                        at org.jenkinsci.plugins.workflow.cps.CpsThread.runNextChunk(CpsThread.java:185)<br>
+                        at org.jenkinsci.plugins.workflow.cps.CpsThreadGroup.run(CpsThreadGroup.java:405)<br>
+                        at org.jenkinsci.plugins.workflow.cps.CpsThreadGroup.access$400(CpsThreadGroup.java:96)<br>
+                        at org.jenkinsci.plugins.workflow.cps.CpsThreadGroup$2.call(CpsThreadGroup.java:317)<br>
+                        at org.jenkinsci.plugins.workflow.cps.CpsThreadGroup$2.call(CpsThreadGroup.java:281)<br>
+                        at org.jenkinsci.plugins.workflow.cps.CpsVmExecutorService$2.call(CpsVmExecutorService.java:67)<br>
+                        at hudson.remoting.SingleLaneExecutorService$1.run(SingleLaneExecutorService.java:131)<br>
+                        at jenkins.util.ContextResettingExecutorService$1.run(ContextResettingExecutorService.java:28)<br>
+                        at jenkins.security.ImpersonatingExecutorService$1.run(ImpersonatingExecutorService.java:59)<br>
+                    Finished: FAILURE<br>
+                </code>
+            </p>
+        </dd>
     </dl>
     <p>
         <b>Access to Jenkins logs</b>
@@ -62,19 +151,86 @@
         <dt><code>java.util.LinkedHashMap getRawMatrixRunsLog(org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper build)</code></dt>
         <dd>
             <p>
-                get raw log from matrix build (map axisId:log)<br>
+                get raw log from matrix build<br>
+                format: <code>[ &lt;axisId&gt;:log ]</code><br>
                 shall fail if build is not the runWrapper of a matrix build
             <p>
         </dd>
     </dl>
     <p>
-        <b>Build information</b>
+        <b>Jobs and Builds</b><br>
+        provide access to jobs and builds and allow to read (READ ONLY) some of their content
+        regardless of the right to see the content of the jobs and builds<br>
+        (might be considered a security breach)
     </p>
     <dl>
+        <dt><code>java.util.LinkedHashMap getJobs()</code></dt>
+        <dd>
+            <p>
+                get map with all jobs from the instance (including jobs from multi-branch projects)<br>
+                format: <code>[ &lt;job fullname&gt;: hudson.model.Job job ]</code>
+            <p>
+        </dd>
+        <dt><code>java.util.LinkedHashMap getMatrixConfiguration(hudson.matrix.MatrixProject job)</code></dt>
+        <dd>
+            <p>
+                get map of the configuration of the matrix
+                format <code>[ &lt;axis fullname&gt;: hudson.matrix.MatrixConfiguration configuration ]</code>
+            <p>
+        </dd>
+        <dt><code>hudson.model.Job getJobByName(String name)</code></dt>
+        <dd>
+            <p>
+                get job by name (fullName)
+            <p>
+        </dd>
+        <dt><code>List&lt;Integer&gt; getRunIds(hudson.model.Job job)</code></dt>
+        <dd>
+            <p>
+                get list of runs for a job
+            <p>
+        </dd>
+        <dt>
+            <code>org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRunWrapper(hudson.model.Job job, Integer runId)</code>
+            <code>org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRunWrapper(hudson.model.Job job, String runId)</code>
+            <code>org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getLastRunWrapper(hudson.model.Job job)</code>
+            <code>org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getLastStableRunWrapper(hudson.model.Job job)</code>
+        </dt>
+        <dd>
+            <p>
+                access RunWrapper from job
+            <p>
+        </dd>
+        <dt><code>void archiveStringArtifact(String name, String buffer)</code></dt>
+        <dd>
+            <p>
+                archive buffer in current run artifacts without instantiating a node (alternative to archiveArtifacts when not already on a node())
+            <p>
+        </dd>
+        <dt><code>String unArchiveStringArtifact(String name, RunWrapper build = currentBuild)</code></dt>
+        <dd>
+            <p>
+                unarchive buffer from build without instantiating a node (alternative to copyArtifacts when not already on a node())
+            <p>
+        </dd>
+        <dt><code>String getJobConfig(RunWrapper build = currentBuild)</code></dt>
+        <dd>
+            <p>
+                get job XML configuration
+            <p>
+        </dd>
+        <dt><code>java.util.LinkedHashMap getBuildPipelineScripts(RunWrapper build = currentBuild)</code></dt>
+        <dd>
+            <p>
+                get a map with pipeline scripts<br>
+                format: <code>[ script: mainScript, loadedScripts: [ Script1: loadedScript1, Script2: loadedScript2, ... ]</code>
+            <p>
+        </dd>
         <dt><code>List&lt;String&gt; getBuildStartupCauses()</code></dt>
         <dd>
             <p>
-                startup causes
+                startup causes<br>
+                <b>OBSOLETE</b> (kept for compatibility): with newer versions of jenkins use RunWrapper.getBuildCauses.collect{ it.getShortDescription() }
             <p>
         </dd>
         <dt>
@@ -84,12 +240,16 @@
         </dt>
         <dd>
             <p>
-                tests who started the job
+                tests who started the job<br>
+                <b>OBSOLETE</b> (kept for compatibility): with newer versions of jenkins:<br>
+                - for <code>isJobStartedByScm()<code> use <code>RunWrapper.getBuildCauses('hudson.triggers.SCMTrigger$SCMTriggerCause') != null || RunWrapper.getBuildCauses('jenkins.branch.BranchIndexingCause') != null<code><br>
+                - for <code>isJobStartedManually()<code> use <code>RunWrapper.getBuildCauses('hudson.model.Cause$UserIdCause') != null<code><br>
+                - for <code>isJobStartedByTimer()<code> use <code>RunWrapper.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') != null<code>
             <p>
         </dd>
     </dl>
     <p>
-        <b>Instance information</b>
+        <b>Node and Labels</b>
     </p>
     <dl>
         <dt><code>List&lt;java.util.LinkedHashMap&gt; getNodes(String label = null)</code></dt>
@@ -149,13 +309,44 @@
         </dd>
     </dl>
     <p>
-        <b>Archiving of artifacts</b>
+        <b>NotBlockingSemaphore</b> an implementation of a semaphore for parallel statements
     </p>
     <dl>
-        <dt><code>archiveArtifactBuffer(buffer, name)</code></dt>
+        <dt>
+            <code>class NotBlockingSemaphore</code>
+            <code>NotBlockingSemaphore semaphore(Integer limit, Integer timeout = 50)</code>
+            <code>void setSemaphoreTimeout(NotBlockingSemaphore sem, Integer timeout)</code>
+            <code>void acquireSemaphore(NotBlockingSemaphore sem)</code>
+            <code>void releaseSemaphore(NotBlockingSemaphore sem)</code>
+        </dt>
         <dd>
             <p>
-                archive buffer in run artifacts
+                instantiate, acquire and release semaphore<br>
+                since the Virtual Machine is monothreaded the wait is not blocking (with sleep between attempts to let other branches work)<br>
+                to do that efficiently we use a timeout in milliseconds (default 50)<br>
+                if less than 10 parallel branhces the timeout of 50ms seems to be a good trade-off<br>
+                with more than 10 branches, it is starting to slow everythging down: reduce the timeout to 0ms or 1ms
+                (0ms is not that bad as long as there are enough branches: the Virtual Manchine is cycling through the branches to find the ones which are available for work)<br>
+                more info:<br>
+                - https://stackoverflow.com/questions/44255708/jenkins-pipeline-and-semaphores<br>
+                - https://issues.jenkins-ci.org/browse/JENKINS-44545<br>
+                - https://issues.jenkins-ci.org/browse/JENKINS-44085<br>
+                <br>
+                example:<br>
+                <code>
+                    timeout(time: 30, unit: 'SECONDS') {<br>
+                        def s = whitelist.semaphore(1)<br>
+                        parallel b1: {<br>
+                            whitelist.acquireSemaphore(s)<br>
+                            // do some atomic work<br>
+                            whitelist.releaseSemaphore(s)<br>
+                        }, b2: {<br>
+                            whitelist.acquireSemaphore(s)<br>
+                            // do some atomic work<br>
+                            whitelist.releaseSemaphore(s)<br>
+                        }, failFast: true<br>
+                    }<br>
+                </code>
             <p>
         </dd>
     </dl>

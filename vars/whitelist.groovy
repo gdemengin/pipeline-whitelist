@@ -22,7 +22,7 @@ String version() {
 List<java.util.LinkedHashMap> plugins() {
     return Jenkins.instance.pluginManager.plugins.collect {
         [
-            displayName:it.getDisplayName(),
+            displayName: it.getDisplayName(),
             shortName: it.getShortName(),
             version: it.getVersion()
         ]
@@ -212,6 +212,60 @@ RunWrapper getLastStableRunWrapper(hudson.model.Job job) {
     return rawBuild ? new RunWrapper(rawBuild, false) : null
 }
 
+//***************************
+//* ACCESS TO JOB/RUN FILES *
+
+// archive text file directly on the master (no need to instantiate a node like ArchiveArtifact)
+@NonCPS
+void archiveStringArtifact(String name, String buffer) {
+    def jobRoot = currentBuild.rawBuild.getRootDir()
+    def file = new File("${jobRoot}/archive/${name}")
+    if (! file.parentFile.exists()){
+        file.parentFile.mkdirs();
+    }
+    file.write(buffer)
+}
+
+// unarchive text artifact
+@NonCPS
+String unArchiveStringArtifact(String name, RunWrapper build = currentBuild) {
+    def jobRoot = build.rawBuild.getRootDir()
+    def file = new File("${jobRoot}/archive/${name}")
+    if (! file.exists()){
+        return null
+    }
+    return file.text
+}
+
+// get job config file
+@NonCPS
+String getJobConfig(RunWrapper build = currentBuild) {
+
+    def jobRoot = build.rawBuild.getRootDir()
+    def configFile = new File(jobRoot.parentFile.parentFile, 'config.xml')
+    assert configFile.exists()
+
+    return configFile.text
+}
+
+// get pipeline script from run
+// shall fail if this is not a workflow run
+@NonCPS
+java.util.LinkedHashMap getBuildPipelineScripts(RunWrapper build = currentBuild) {
+
+    def jobRoot = build.rawBuild.getRootDir()
+    def configFile = new File(jobRoot, 'build.xml')
+    assert configFile.exists()
+
+    def rootnode = new XmlSlurper().parse(configFile.path)
+    def script = rootnode.execution.script.toString()
+    def loadedScripts = [:]
+    rootnode.execution.loadedScripts.entry.each{
+        loadedScripts["${it.string[0].toString()}".toString()] = it.string[1].toString()
+    }
+
+    return [ script: script, loadedScripts: loadedScripts ]
+}
 
 //******************
 //* STARTUP CAUSES *
@@ -363,61 +417,6 @@ List<java.util.LinkedHashMap> getLabels() {
     }
 }
 
-//***************************
-//* ACCESS TO JOB/RUN FILES *
-//***************************
-
-// archive text file directly on the master (no need to instantiate a node like ArchiveArtifact)
-@NonCPS
-void archiveStringArtifact(String name, String buffer) {
-    def jobRoot = currentBuild.rawBuild.getRootDir()
-    def file = new File("${jobRoot}/archive/${name}")
-    if (! file.parentFile.exists()){
-        file.parentFile.mkdirs();
-    }
-    file.write(buffer)
-}
-
-// unarchive text artifact
-@NonCPS
-String unArchiveStringArtifact(String name, RunWrapper build = currentBuild) {
-    def jobRoot = build.rawBuild.getRootDir()
-    def file = new File("${jobRoot}/archive/${name}")
-    if (! file.exists()){
-        return null
-    }
-    return file.text
-}
-
-// get job config file
-@NonCPS
-String getJobConfig(RunWrapper build = currentBuild) {
-
-    def jobRoot = build.rawBuild.getRootDir()
-    def configFile = new File(jobRoot.parentFile.parentFile, 'config.xml')
-    assert configFile.exists()
-
-    return configFile.text
-}
-
-// get pipeline script from run
-// shall fail if this is not a workflow run
-@NonCPS
-java.util.LinkedHashMap getBuildPipelineScripts(RunWrapper build = currentBuild) {
-
-    def jobRoot = build.rawBuild.getRootDir()
-    def configFile = new File(jobRoot, 'build.xml')
-    assert configFile.exists()
-
-    def rootnode = new XmlSlurper().parse(configFile.path)
-    def script = rootnode.execution.script.toString()
-    def loadedScripts = [:]
-    rootnode.execution.loadedScripts.entry.each{
-        loadedScripts["${it.string[0].toString()}".toString()] = it.string[1].toString()
-    }
-
-    return [ script: script, loadedScripts: loadedScripts ]
-}
 
 //*************
 //* SEMAPHORE *

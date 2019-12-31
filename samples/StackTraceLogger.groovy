@@ -10,7 +10,7 @@
 
 // TODO: find a way to put stackTraceLogger in an annotation (something like AspectJ annotations for example)
 
-
+// import whitelist library
 @Library('pipeline-whitelist@master') _
 
 // max log size: 10KB
