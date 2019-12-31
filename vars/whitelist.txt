@@ -184,13 +184,13 @@
         <b>Access to Jenkins logs</b>
     </p>
     <dl>
-        <dt><code>String getRawBuildLog(org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper build = currentBuild)</code></dt>
+        <dt><code>String getRawBuildLog(RunWrapper build = currentBuild)</code></dt>
         <dd>
             <p>
                 get raw log from current build
             <p>
         </dd>
-        <dt><code>java.util.LinkedHashMap getRawMatrixRunsLog(org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper build)</code></dt>
+        <dt><code>java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build)</code></dt>
         <dd>
             <p>
                 get raw log from matrix build<br>
@@ -233,10 +233,10 @@
             <p>
         </dd>
         <dt>
-            <code>org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRunWrapper(hudson.model.Job job, Integer runId)</code>
-            <code>org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRunWrapper(hudson.model.Job job, String runId)</code>
-            <code>org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getLastRunWrapper(hudson.model.Job job)</code>
-            <code>org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getLastStableRunWrapper(hudson.model.Job job)</code>
+            <code>RunWrapper getRunWrapper(hudson.model.Job job, Integer runId)</code>
+            <code>RunWrapper getRunWrapper(hudson.model.Job job, String runId)</code>
+            <code>RunWrapper getLastRunWrapper(hudson.model.Job job)</code>
+            <code>RunWrapper getLastStableRunWrapper(hudson.model.Job job)</code>
         </dt>
         <dd>
             <p>
