@@ -4,10 +4,12 @@
 // a library to expose useful functions (blacklisted by default in jenkins) which should be whitelisted IMHO
 
 import org.codehaus.groovy.runtime.StackTraceUtils
+// commons/text not available in older versions of jenkins
+//import org.apache.commons.text.StringEscapeUtils
 import org.apache.commons.lang3.StringEscapeUtils
+import java.text.SimpleDateFormat
 import java.util.concurrent.Semaphore
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
-
 
 //*****************************
 //* JENKINS & PLUGINS VERSION *
@@ -29,9 +31,9 @@ List<java.util.LinkedHashMap> plugins() {
     }
 }
 
-//***********************
-//* STRING MANIPULATION *
-//***********************
+//******************
+//* STRING HELPERS *
+//******************
 
 // multiply string by a number
 // should not be blacklisted ...
@@ -44,6 +46,23 @@ String multiply(String lhs, Integer rhs) {
 @NonCPS
 String escapeHtml4(String input) {
     return StringEscapeUtils.escapeHtml4(input)
+}
+
+//****************
+//* DATE HELPERS *
+//****************
+
+// should not be blacklisted ...
+@NonCPS
+java.util.LinkedHashMap minusDate(Date lhs, Date rhs) {
+    def duration = groovy.time.TimeCategory.minus(lhs, rhs)
+    return [ days: duration.days, hours: duration.hours, minutes: duration.minutes, seconds: duration.seconds, millis: duration.millis ]
+}
+
+// should not be blacklisted ...
+@NonCPS
+Date parseDate(String format, String date) {
+    return new SimpleDateFormat(format).parse(date)
 }
 
 //**********************

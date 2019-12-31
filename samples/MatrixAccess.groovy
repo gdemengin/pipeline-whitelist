@@ -5,7 +5,7 @@
 //   before this sample can be run without error
 
 // import whitelist library
-@Library('pipeline-whitelist@1.0') _
+@Library('pipeline-whitelist@experiment') _
 
 def prepare() {
     // make sure we have the plugins we need to use DSL scripts
@@ -16,7 +16,7 @@ def prepare() {
 
     // return value
     def matrixDesc = [:]
-    matrixDesc.matrixName = "${env.JOB_NAME}-matrix"
+    matrixDesc.matrixName = "${env.JOB_NAME}-matrix".replace('/','-')
     // matrix job with 3 axis
     def dslScriptTemplate = """\
         matrixJob('${matrixDesc.matrixName}') {

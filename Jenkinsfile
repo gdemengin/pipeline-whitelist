@@ -2,11 +2,29 @@
 
 
 // import whitelist library
-@Library('pipeline-whitelist@1.0') _
+@Library('pipeline-whitelist@experiment') _
+
+// ===============
+// = constants   =
+// ===============
 
 // label which exist on the instance, has linux hosts
 // null if all hosts fit the description
 LABEL_LINUX=null
+
+// =============
+// = globals   =
+// =============
+
+// true when "new Exception" is allowed
+// set to false to test with older versions
+// TODO find which version is affected and automatically determine if true or false
+@groovy.transform.Field
+oldVersion = false
+
+// =====================
+// = whitelist tests   =
+// =====================
 
 // sort list of maps by field must be done in @NonCPS method
 // https://issues.jenkins-ci.org/browse/JENKINS-44924
@@ -30,7 +48,7 @@ def testVersion() {
         'workflow-job plugin is not installed, this is unexpected'
 }
 
-def testStringManipulation() {
+def testString() {
     print 'testing string manipulation'
 
     def result = whitelist.multiply('toto ', 3)
@@ -44,6 +62,34 @@ def testStringManipulation() {
         "whitelist.escapeHtml4('\">&<') gives an unexpected result: '${result}', expected: '${expected}'"
 }
 
+def testDate() {
+    print 'testing date manipulation'
+
+    def t1 = whitelist.parseDate("dd/MM/yyyy HH:mm:ss", '01/01/2020 12:00:24');
+    def t2 = whitelist.parseDate("dd/MM/yyyy HH:mm:ss", '01/01/2041 00:00:00');
+
+    def interval = whitelist.minusDate(t2, t1)
+    print interval
+    assert interval.days == 7670 && interval.hours == 11 && interval. minutes == 59 && interval.seconds == 36 && interval.millis == 0
+
+    t1 = whitelist.parseDate("dd/MM/yyyy HH:mm:ss", '01/01/2020 12:00:24');
+    t2 = whitelist.parseDate("dd/MM/yyyy HH:mm:ss", '01/01/2020 12:02:00');
+
+    interval = whitelist.minusDate(t2, t1)
+    print interval
+    assert interval.days == 0 && interval.hours == 0 && interval. minutes == 1 && interval.seconds == 36 && interval.millis == 0
+
+    interval = whitelist.minusDate(t1, t1)
+    print interval
+    assert interval.days == 0 && interval.hours == 0 && interval. minutes == 0 && interval.seconds == 0 && interval.millis == 0
+
+    t1 = new Date()
+    // wait a few ms, print shall actually do that
+    print 'waiting a few ms'
+    interval = whitelist.minusDate(new Date(), t1)
+    print interval
+    assert interval.days == 0 && interval.hours == 0 && interval.minutes == 0 && interval.seconds >= 0 && interval.millis > 0
+}
 
 // utility function to check exceptions
 // beforeExcStackTrace is the stack one line before the exception
@@ -202,24 +248,27 @@ def testMetaDataAccess() {
         )
     }
 
-    // plain exception
-    beforeExcStackTrace = null
-    try {
-        beforeExcStackTrace = whitelist.getCurrentStackTrace()
-        throw new Exception('this is an exception')
-    } catch (e) {
-        print "caught ${e}"
+    // new Exception not allowed with older version (not sure since when)
+    if (! oldVersion) {
+        // plain exception
+        beforeExcStackTrace = null
+        try {
+            beforeExcStackTrace = whitelist.getCurrentStackTrace()
+            throw new Exception('this is an exception')
+        } catch (e) {
+            print "caught ${e}"
 
-        // append stackTrace in a suppressed exception if needed
-        whitelist.addTraceableStackTrace(e)
+            // append stackTrace in a suppressed exception if needed
+            whitelist.addTraceableStackTrace(e)
 
-        catchAndCheckException(
-            e,
-            beforeExcStackTrace,
-            java.lang.Exception,
-            true,
-            true
-        )
+            catchAndCheckException(
+                e,
+                beforeExcStackTrace,
+                java.lang.Exception,
+                true,
+                true
+            )
+        }
     }
 
     // error statement (hudson.AbortException)
@@ -384,7 +433,6 @@ def testNodesAndLabels() {
     }
 }
 
-
 def testSemaphore() {
     print 'test semaphore'
     timeout(time: 30, unit: 'SECONDS') {
@@ -427,13 +475,19 @@ def testSemaphore() {
 }
 
 
-// run tests
+// ===============
+// = run tests   =
+// ===============
+
 
 stage('testVersion') {
     testVersion()
 }
-stage('testStringManipulation') {
-    testStringManipulation()
+stage('testString') {
+    testString()
+}
+stage('testDate') {
+    testDate()
 }
 stage('testMetaDataAccess') {
     testMetaDataAccess()
