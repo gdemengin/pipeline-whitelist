@@ -2,7 +2,7 @@
 
 
 // import whitelist library
-@Library('pipeline-whitelist@master') _
+@Library('pipeline-whitelist@1.0') _
 
 // label which exist on the instance, has linux hosts
 // null if all hosts fit the description

@@ -5,7 +5,7 @@
 //   before this sample can be run without error
 
 // import whitelist library
-@Library('pipeline-whitelist@master') _
+@Library('pipeline-whitelist@1.0') _
 
 def prepare() {
     // make sure we have the plugins we need to use DSL scripts
