@@ -284,7 +284,7 @@
             <p>
                 tests who started the job<br>
                 <b>OBSOLETE</b> (kept for compatibility): with newer versions of jenkins:<br>
-                - for <code>isJobStartedByScm()<code> use <code>RunWrapper.getBuildCauses('hudson.triggers.SCMTrigger$SCMTriggerCause') != null || RunWrapper.getBuildCauses('jenkins.branch.BranchIndexingCause') != null</code><br>
+                - for <code>isJobStartedByScm()</code> use <code>RunWrapper.getBuildCauses('hudson.triggers.SCMTrigger$SCMTriggerCause') != null || RunWrapper.getBuildCauses('jenkins.branch.BranchIndexingCause') != null</code><br>
                 - for <code>isJobStartedManually()</code> use <code>RunWrapper.getBuildCauses('hudson.model.Cause$UserIdCause') != null</code><br>
                 - for <code>isJobStartedByTimer()</code> use <code>RunWrapper.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') != null</code>
             <p>
