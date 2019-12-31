@@ -369,7 +369,7 @@
                 - if less than 10 parallel branches waiting on the semaphore the timeout of 50ms seems to be a good trade-off<br>
                 - with more than 10 branches, it is starting to slow everything down: reduce the timeout to 0ms or 1ms<br>
                 (0ms is acceptable as long as there are enough branches waiting: <br>
-                 Virtual Machine is cycling through branches to find the ones which are available for work)<br>
+                &nbsp;Virtual Machine is cycling through branches to find the ones which are available for work)<br>
                 more info:<br>
                 - <a href="https://stackoverflow.com/questions/44255708/jenkins-pipeline-and-semaphores">jenkins-pipeline-and-semaphores</a><br>
                 - <a href="https://issues.jenkins-ci.org/browse/JENKINS-44545">JENKINS-44545</a><br>
