@@ -355,20 +355,20 @@
     </p>
     <dl>
         <dt>
-            <code>class NotBlockingSemaphore</code>
-            <code>NotBlockingSemaphore semaphore(Integer limit, Integer timeout = 50)</code>
-            <code>void setSemaphoreTimeout(NotBlockingSemaphore sem, Integer timeout)</code>
-            <code>void acquireSemaphore(NotBlockingSemaphore sem)</code>
+            <code>class NotBlockingSemaphore extends Semaphore</code><br>
+            <code>NotBlockingSemaphore semaphore(Integer limit, Integer timeout = 50)</code><br>
+            <code>void setSemaphoreTimeout(NotBlockingSemaphore sem, Integer timeout)</code><br>
+            <code>void acquireSemaphore(NotBlockingSemaphore sem)</code><br>
             <code>void releaseSemaphore(NotBlockingSemaphore sem)</code>
         </dt>
         <dd>
             <p>
                 instantiate, acquire and release semaphore<br>
-                since the Virtual Machine is monothreaded the wait is not blocking (with sleep between attempts to let other branches work)<br>
+                since the Virtual Machine is mono-threaded the wait is not blocking (with sleep between attempts to let other branches work)<br>
                 to do that efficiently we use a timeout in milliseconds (default 50)<br>
-                if less than 10 parallel branhces the timeout of 50ms seems to be a good trade-off<br>
-                with more than 10 branches, it is starting to slow everythging down: reduce the timeout to 0ms or 1ms
-                (0ms is not that bad as long as there are enough branches: the Virtual Manchine is cycling through the branches to find the ones which are available for work)<br>
+                if less than 10 parallel branches the timeout of 50ms seems to be a good trade-off<br>
+                with more than 10 branches, it is starting to slow everything down: reduce the timeout to 0ms or 1ms
+                (0ms is not that bad as long as there are enough branches: the Virtual Machine is cycling through the branches to find the ones which are available for work)<br>
                 more info:<br>
                 - https://stackoverflow.com/questions/44255708/jenkins-pipeline-and-semaphores<br>
                 - https://issues.jenkins-ci.org/browse/JENKINS-44545<br>
@@ -376,7 +376,6 @@
                 <br>
                 example:<br>
                 <code>
-                &nbsp;&nbsp;timeout(time: 30, unit: 'SECONDS') {<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;def s = whitelist.semaphore(1)<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;parallel b1: {<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;whitelist.acquireSemaphore(s)<br>
@@ -387,7 +386,6 @@
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>// do some atomic work</b><br>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;whitelist.releaseSemaphore(s)<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;}, failFast: true<br>
-                &nbsp;&nbsp;}<br>
                 </code>
             <p>
         </dd>
