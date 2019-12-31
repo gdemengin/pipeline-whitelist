@@ -22,7 +22,7 @@ pipeline-whitelist is meant to be used as a "Global Pipeline Library"
 
 ## documentation
 
-- see 'whitelist' documentation in $JOB_URL/pipeline-syntax/globals (visible only after the library has been imported once)
+- see 'whitelist' documentation in $JOB_URL/pipeline-syntax/globals#whitelist (visible only after the library has been imported once)
 - or see [whitelist.txt](./vars/whitelist.txt)
 
 ## change log

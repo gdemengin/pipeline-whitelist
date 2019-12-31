@@ -17,8 +17,8 @@
         <dt><code>List<java.util.LinkedHashMap> plugins()</code></dt>
         <dd>
             <p>
-                get list dictionaries with plugins name and version<br>
-                format: <code>[ [ displayName: name, shortName: name, version: v ]* ]</code>
+                get list of dictionaries with plugins name and version<br>
+                format: <code>[ [ displayName: name, shortName: shortName, version: v ]* ]</code>
             <p>
         </dd>
     </dl>
@@ -187,7 +187,7 @@
         <dt><code>String getRawBuildLog(RunWrapper build = currentBuild)</code></dt>
         <dd>
             <p>
-                get raw log from current build
+                get raw log from build
             <p>
         </dd>
         <dt><code>java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build)</code></dt>
@@ -200,10 +200,9 @@
         </dd>
     </dl>
     <p>
-        <b>Jobs and Builds</b><br>
-        provide access to jobs and builds and allow to read (READ ONLY) some of their content
-        regardless of the right to see the content of the jobs and builds<br>
-        (might be considered a security breach)
+        <b>Access to Jobs and Builds</b><br>
+        provide access to jobs and builds and allow to read (READ ONLY) some of their content<br>
+        regardless of the read access rights (might be considered a security breach)
     </p>
     <dl>
         <dt><code>java.util.LinkedHashMap getJobs()</code></dt>
@@ -216,7 +215,7 @@
         <dt><code>java.util.LinkedHashMap getMatrixConfiguration(hudson.matrix.MatrixProject job)</code></dt>
         <dd>
             <p>
-                get map of the configuration of the matrix
+                get map of the configuration of the matrix<br>
                 format <code>[ &lt;axis fullname&gt;: hudson.matrix.MatrixConfiguration configuration ]</code>
             <p>
         </dd>
@@ -233,9 +232,9 @@
             <p>
         </dd>
         <dt>
-            <code>RunWrapper getRunWrapper(hudson.model.Job job, Integer runId)</code>
-            <code>RunWrapper getRunWrapper(hudson.model.Job job, String runId)</code>
-            <code>RunWrapper getLastRunWrapper(hudson.model.Job job)</code>
+            <code>RunWrapper getRunWrapper(hudson.model.Job job, Integer runId)</code><br>
+            <code>RunWrapper getRunWrapper(hudson.model.Job job, String runId)</code><br>
+            <code>RunWrapper getLastRunWrapper(hudson.model.Job job)</code><br>
             <code>RunWrapper getLastStableRunWrapper(hudson.model.Job job)</code>
         </dt>
         <dd>
@@ -364,15 +363,17 @@
         <dd>
             <p>
                 instantiate, acquire and release semaphore<br>
-                since the Virtual Machine is mono-threaded the wait is not blocking (with sleep between attempts to let other branches work)<br>
-                to do that efficiently we use a timeout in milliseconds (default 50)<br>
-                if less than 10 parallel branches the timeout of 50ms seems to be a good trade-off<br>
-                with more than 10 branches, it is starting to slow everything down: reduce the timeout to 0ms or 1ms
-                (0ms is not that bad as long as there are enough branches: the Virtual Machine is cycling through the branches to find the ones which are available for work)<br>
+                since the Virtual Machine is mono-threaded the wait is active<br>
+                (i.e. not blocking with sleep between attempts, otherwise it would block all parallel branches)<br>
+                use the timeout parameter (default 50ms) to set the sleep time<br>
+                - if less than 10 parallel branches waiting on the semaphore the timeout of 50ms seems to be a good trade-off<br>
+                - with more than 10 branches, it is starting to slow everything down: reduce the timeout to 0ms or 1ms
+                (0ms is acceptable as long as there are enough branches waiting: <br>
+                 Virtual Machine is cycling through branches to find the ones which are available for work)<br>
                 more info:<br>
-                - https://stackoverflow.com/questions/44255708/jenkins-pipeline-and-semaphores<br>
-                - https://issues.jenkins-ci.org/browse/JENKINS-44545<br>
-                - https://issues.jenkins-ci.org/browse/JENKINS-44085<br>
+                - <a href="https://stackoverflow.com/questions/44255708/jenkins-pipeline-and-semaphores">jenkins-pipeline-and-semaphores</a><br>
+                - <a href="https://issues.jenkins-ci.org/browse/JENKINS-44545">JENKINS-44545</a><br>
+                - <a href="https://issues.jenkins-ci.org/browse/JENKINS-44085">JENKINS-44545</a><br>
                 <br>
                 example:<br>
                 <code>
