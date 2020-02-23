@@ -1,4 +1,6 @@
-@Library('pipeline-whitelist@experiment') _
+// sample pipeline to demonstrate date functionalities of https://github.com/gdemengin/pipeline-whitelist/ "Global Pipeline Library" whitelist
+
+@Library('pipeline-whitelist@master') _
 
 def format(interval) {
     def dict = [days: 'd', hours: 'h', minutes: 'm', seconds: 's', millis: 'ms']
