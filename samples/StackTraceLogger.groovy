@@ -11,7 +11,7 @@
 // TODO: find a way to put stackTraceLogger in an annotation (something like AspectJ annotations for example)
 
 // import whitelist library
-@Library('pipeline-whitelist@1.0') _
+@Library('pipeline-whitelist@experiment') _
 
 // max log size: 10KB
 MAX_LOG_SIZE = 10*1024
@@ -224,7 +224,7 @@ def testNestedError() {
 def testLevels(a,b) {
     def levels = [ beginEnd: LogLevel.DEBUG, retVal: LogLevel.WARN, args: LogLevel.INFO ]
     print levels
-    return stackTraceLogger([a,b], levels ) {
+    return stackTraceLogger([a,b], levels) {
         return a+b
     }
 }
@@ -232,7 +232,7 @@ def testLevels(a,b) {
 def testLevels2(a,b) {
     def levels = [ beginEnd: LogLevel.WARN, retVal: LogLevel.ERROR ]
     print levels
-    return stackTraceLogger([a,b], levels ) {
+    return stackTraceLogger([a,b], levels) {
         return a+b
     }
 }
@@ -240,7 +240,7 @@ def testLevels2(a,b) {
 def testLevelsNoReturnValue(a,b) {
     def levels = [ retVal: LogLevel.NONE ]
     print levels
-    return stackTraceLogger([a,b], levels ) {
+    return stackTraceLogger([a,b], levels) {
         return a+b
     }
 }

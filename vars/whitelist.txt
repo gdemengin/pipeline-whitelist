@@ -23,7 +23,7 @@
         </dd>
     </dl>
     <p>
-        <b>String manipulation</b>
+        <b>String helpers</b>
     </p>
     <dl>
         <dt><code>String multiply(String lhs, Integer rhs)</code></dt>
@@ -36,6 +36,23 @@
         <dd>
             <p>
                 <code>return org.apache.commons.lang3.StringEscapeUtils.escapeHtml4(input)</code>
+            <p>
+        </dd>
+    </dl>
+    <p>
+        <b>Date helpers</b>
+    </p>
+    <dl>
+        <dt><code>java.util.LinkedHashMap minusDate(Date lhs, Date rhs)</code></dt>
+        <dd>
+            <p>
+                <code>return groovy.time.TimeCategory.minus(lhs, rhs)</code> as a map with keys ( days, hours, minutes, seconds, millis )
+            <p>
+        </dd>
+        <dt><code>Date parseDate(String format, String date)</code></dt>
+        <dd>
+            <p>
+                <code>return new SimpleDateFormat(format).parse(date)</code>
             <p>
         </dd>
     </dl>
