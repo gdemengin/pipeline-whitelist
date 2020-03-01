@@ -2,7 +2,7 @@
 
 
 // import whitelist library
-@Library('pipeline-whitelist@master') _
+@Library('pipeline-whitelist@1.1') _
 
 // ===============
 // = constants   =

@@ -17,7 +17,7 @@ a library to expose useful functions which are blacklisted by default in jenkins
 ### import pipeline-whitelist library
 in Jenkinsfile import library like this
 ```
-@Library('pipeline-whitelist@2.0') _
+@Library('pipeline-whitelist@1.1') _
 ```
 _identifier "pipeline-whitelist" is the name of the library set by jenkins administrator in instance configuration:_
 * _it may be different on your instance_
@@ -30,7 +30,7 @@ _identifier "pipeline-whitelist" is the name of the library set by jenkins admin
   print whitelist.version()
   ```
 
-- see complete documentation here: [whitelist.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/master/vars/whitelist.txt)
+- see complete documentation here: [whitelist.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/1.1/vars/whitelist.txt)
 also available in $JOB_URL/pipeline-syntax/globals#whitelist (visible only after the library has been imported once)
 
 
@@ -57,5 +57,5 @@ pipeline-whitelist is meant to be used as a "Global Pipeline Library"
     * a function wrapper to print logs with methodName and line number
     * example of use with matrix jobs
 
-* 2.0 (in progress):
+* 1.1 (03/2020):
   - expose groovy.time.TimeCategory.minus and SimpleDateFormat.parse in new methods minusDate and parseDate
