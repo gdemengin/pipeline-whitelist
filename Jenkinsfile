@@ -10,7 +10,7 @@
 
 // label which exist on the instance, has linux hosts
 // null if all hosts fit the description
-LABEL_LINUX=null
+LABEL_LINUX='linux'
 
 // =============
 // = globals   =
@@ -20,7 +20,7 @@ LABEL_LINUX=null
 // set to false to test with older versions
 // TODO find which version is affected and automatically determine if true or false
 @groovy.transform.Field
-oldVersion = false
+newExcAllowed = true
 
 // =====================
 // = whitelist tests   =
@@ -37,15 +37,37 @@ def testVersion() {
     print 'testing version'
 
     def version = whitelist.version()
-    print "Jenkins version : ${version}"
-    assert Integer.parseInt(version.tokenize('.')[0]) >= 2,
+    def versionStr = "Jenkins version : ${version}"
+    print versionStr
+
+    def versionTokens = version.split(/\./)
+    assert versionTokens.size() >= 2 && versionTokens[0] ==~ /\d+/ && versionTokens[1] ==~ /\d+/
+    def major = versionTokens[0].toInteger()
+    def minor = versionTokens[1].toInteger()
+
+    assert major >= 2,
         "jenkins version ${version} is not greater than 2, this is unexpected"
 
     def plugins = whitelist.plugins()
     sortByField(plugins, 'shortName')
-    print "Plugins : \n${plugins.collect{ "\t${it.displayName} (${it.shortName}) v${it.version}" }.join('\n')}"
+    def pluginsVersionStr = "Plugins : \n${plugins.collect{ "\t${it.displayName} (${it.shortName}) v${it.version}" }.join('\n')}"
+    print pluginsVersionStr
     assert plugins.find{ it.shortName == 'workflow-job' } != null,
         'workflow-job plugin is not installed, this is unexpected'
+
+    // check if script security version is less than 1.44
+    def SSpluginVerList = plugins.findAll{ it.shortName == 'script-security' }.collect { it.version }
+    assert SSpluginVerList.size() == 1, 'could not find script-security plugin version'
+
+    def SSversionTokens = SSpluginVerList[0].split(/\./)
+    assert SSversionTokens.size() >= 2 && SSversionTokens[0] ==~ /\d+/ && SSversionTokens[1] ==~ /\d+/
+    def SSmajor = SSversionTokens[0].toInteger()
+    def SSminor = SSversionTokens[1].toInteger()
+
+    newExcAllowed = ((SSmajor > 1) || (SSmajor == 1 && SSminor >= 44))
+
+    // return version as string to be archived
+    return "${versionStr}\n${pluginsVersionStr}"
 }
 
 def testString() {
@@ -249,7 +271,7 @@ def testMetaDataAccess() {
     }
 
     // new Exception not allowed with older version (not sure since when)
-    if (! oldVersion) {
+    if (newExcAllowed) {
         // plain exception
         beforeExcStackTrace = null
         try {
@@ -377,11 +399,11 @@ def testJobsAndBuilds() {
         'something unexpected happened: the build was not started by scm, timer or human'
 }
 
-def testJobFilesAccess() {
+def testJobFilesAccess(versionStr) {
     print 'testing archive/unarchive'
-    whitelist.archiveStringArtifact('artifact1.txt', 'text in artifact')
-    def text = whitelist.unArchiveStringArtifact('artifact1.txt')
-    assert text == 'text in artifact'
+    whitelist.archiveStringArtifact('tested-with.txt', versionStr)
+    def text = whitelist.unArchiveStringArtifact('tested-with.txt')
+    assert text == versionStr
 
     print "job config = \n\t${ whitelist.getJobConfig().split('\n').join('\n\t') }"
 
@@ -480,8 +502,9 @@ def testSemaphore() {
 // ===============
 
 
+def versionStr = ''
 stage('testVersion') {
-    testVersion()
+    versionStr = testVersion()
 }
 stage('testString') {
     testString()
@@ -502,7 +525,7 @@ stage('testNodesAndLabels') {
     testNodesAndLabels()
 }
 stage('testJobFilesAccess') {
-    testJobFilesAccess()
+    testJobFilesAccess(versionStr)
 }
 stage('testSemaphore') {
     testSemaphore()
