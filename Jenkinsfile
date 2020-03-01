@@ -2,7 +2,7 @@
 
 
 // import whitelist library
-@Library('pipeline-whitelist@2.0.1') _
+@Library('pipeline-whitelist@grab') _
 
 // ===============
 // = constants   =
@@ -43,13 +43,8 @@ def testVersion() {
     def versionStr = "Jenkins Instance Version : ${instanceVersion}"
     print versionStr
 
-    def versionTokens = instanceVersion.split(/\./)
-    assert versionTokens.size() >= 2 && versionTokens[0] ==~ /\d+/ && versionTokens[1] ==~ /\d+/
-    def major = versionTokens[0].toInteger()
-    def minor = versionTokens[1].toInteger()
-
-    assert major >= 2,
-        "jenkins version ${instanceVersion} is not greater than 2, this is unexpected"
+    assert whitelist.versionCompare(instanceVersion, '2') >= 0
+        "jenkins version ${version} is not greater than 2, this is unexpected"
 
     def plugins = whitelist.plugins()
     sortByField(plugins, 'shortName')
@@ -61,13 +56,7 @@ def testVersion() {
     // check if script security version is less than 1.44
     def SSpluginVerList = plugins.findAll{ it.shortName == 'script-security' }.collect { it.version }
     assert SSpluginVerList.size() == 1, 'could not find script-security plugin version'
-
-    def SSversionTokens = SSpluginVerList[0].split(/\./)
-    assert SSversionTokens.size() >= 2 && SSversionTokens[0] ==~ /\d+/ && SSversionTokens[1] ==~ /\d+/
-    def SSmajor = SSversionTokens[0].toInteger()
-    def SSminor = SSversionTokens[1].toInteger()
-
-    newExcAllowed = ((SSmajor > 1) || (SSmajor == 1 && SSminor >= 44))
+    newExcAllowed = ( whitelist.versionCompare(SSpluginVerList[0], '1.44') >= 0 )
 
     // return version as string to be archived
     return "${versionStr}\n${pluginsVersionStr}"
@@ -85,6 +74,15 @@ def testString() {
     expected = '&quot;&gt;&amp;&lt;'
     assert result == expected,
         "whitelist.escapeHtml4('\">&<') gives an unexpected result: '${result}', expected: '${expected}'"
+
+    assert whitelist.versionCompare('2.25', '2.26') == -1
+    assert whitelist.versionCompare('2.25', '2.25.2') == -1
+    assert whitelist.versionCompare('2.26', '2.25.2') == 1
+    assert whitelist.versionCompare('2.25', '2.26.beta1') == -1
+    // VersionComparator exposed in whitelist (grails.plugins.VersionComparator) does not consider non numeric parts of the version ... oh well
+    assert whitelist.versionCompare('2.26.beta2', '2.26.beta1') == 0
+    assert whitelist.versionCompare('2.73.3','2') == 1
+    assert whitelist.versionCompare('2.0', '2') == 0
 }
 
 def testDate() {

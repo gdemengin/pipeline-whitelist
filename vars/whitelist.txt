@@ -41,7 +41,13 @@
         <dt><code>String escapeHtml4(String input)</code></dt>
         <dd>
             <p>
-                <code>return org.apache.commons.lang3.StringEscapeUtils.escapeHtml4(input)</code>
+                <code>return org.apache.commons.text.StringEscapeUtils.escapeHtml4(input)</code>
+            <p>
+        </dd>
+        <dt><code>Integer versionCompare(String v1, Integer v2)</code></dt>
+        <dd>
+            <p>
+                <code>return grails.plugins.VersionComparator().compare(v1,v2)</code>
             <p>
         </dd>
     </dl>

@@ -11,7 +11,7 @@
 // TODO: find a way to put stackTraceLogger in an annotation (something like AspectJ annotations for example)
 
 // import whitelist library
-@Library('pipeline-whitelist@2.0.1') _
+@Library('pipeline-whitelist@grab') _
 
 // max log size: 10KB
 @groovy.transform.Field
@@ -21,13 +21,8 @@ MAX_LOG_SIZE = 10*1024
 @groovy.transform.Field
 ALLOW_NEW_EXCEPTION = null
 whitelist.plugins().findAll{ it.shortName == 'script-security' }.each {
-    def SSversionTokens = it.version.split(/\./)
-    assert SSversionTokens.size() >= 2 && SSversionTokens[0] ==~ /\d+/ && SSversionTokens[1] ==~ /\d+/
-    def SSmajor = SSversionTokens[0].toInteger()
-    def SSminor = SSversionTokens[1].toInteger()
-
     assert ALLOW_NEW_EXCEPTION == null
-    ALLOW_NEW_EXCEPTION = ((SSmajor > 1) || (SSmajor == 1 && SSminor >= 44))
+    ALLOW_NEW_EXCEPTION = ( whitelist.versionCompare(it.version, '1.44') >= 0 )
 }
 assert ALLOW_NEW_EXCEPTION != null
 

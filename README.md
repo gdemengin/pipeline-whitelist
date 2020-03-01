@@ -72,3 +72,7 @@ pipeline-whitelist is meant to be used as a "Global Pipeline Library"
 
 * 2.0.1 (09/2020):
   - fix issue with getJobs() not compatible with folder type
+
+* grab branch
+  - use grabbing to get useful groovy packages (requires jenkins correctly configured)
+  - expose grails.plugins.VersionComparator.compare in new method versionCompare

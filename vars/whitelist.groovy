@@ -4,12 +4,16 @@
 // a library to expose useful functions (blacklisted by default in jenkins) which should be whitelisted IMHO
 
 import org.codehaus.groovy.runtime.StackTraceUtils
-// commons/text not available in older versions of jenkins
-//import org.apache.commons.text.StringEscapeUtils
-import org.apache.commons.lang3.StringEscapeUtils
-import java.text.SimpleDateFormat
-import java.util.concurrent.Semaphore
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
+import java.util.concurrent.Semaphore
+import java.text.SimpleDateFormat
+
+@Grab('org.grails:grails-bootstrap:4.0.1')
+import grails.plugins.VersionComparator
+
+@Grab('org.apache.commons:commons-text:1.8')
+import org.apache.commons.text.StringEscapeUtils
+
 
 //***************
 //* API VERSION *
@@ -56,6 +60,11 @@ String multiply(String lhs, Integer rhs) {
 @NonCPS
 String escapeHtml4(String input) {
     return StringEscapeUtils.escapeHtml4(input)
+}
+
+@NonCPS
+Integer versionCompare(v1,v2) {
+    return new VersionComparator().compare(v1,v2)
 }
 
 //****************
