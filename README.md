@@ -17,7 +17,7 @@ a library to expose useful functions which are blacklisted by default in jenkins
 ### import pipeline-whitelist library
 in Jenkinsfile import library like this
 ```
-@Library('pipeline-whitelist@1.2') _
+@Library('pipeline-whitelist@cloudlabel') _
 ```
 _identifier "pipeline-whitelist" is the name of the library set by jenkins administrator in instance configuration:_
 * _it may be different on your instance_
@@ -30,7 +30,7 @@ _identifier "pipeline-whitelist" is the name of the library set by jenkins admin
   print whitelist.version()
   ```
 
-- see complete documentation here: [whitelist.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/1.1/vars/whitelist.txt)
+- see complete documentation here: [whitelist.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/cloudlabel/vars/whitelist.txt)
 also available in $JOB_URL/pipeline-syntax/globals#whitelist (visible only after the library has been imported once)
 
 
@@ -63,3 +63,9 @@ pipeline-whitelist is meant to be used as a "Global Pipeline Library"
 * 1.2 (08/2020):
   - access (R/O) Throwable.getCause()
   - fix StackTraceLogger sample
+
+* branch cloudlabel (08/2020):
+  - getLabels() and isDockerTransientNode were not compatible with kubernetes plugin:
+    change API to return a list of String labels + add function to test if label belongs to a cloud + rename isDockerTransientNode() to isCloudNode()
+  - new function instanceVersion() get jenkins instance version (formerly version()
+  - API change: version() now returns the version of this package (to allow checking which version was loaded in case another part of the pipeline already loaded another version of pipeline-whitelist)

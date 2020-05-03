@@ -11,12 +11,22 @@ import java.text.SimpleDateFormat
 import java.util.concurrent.Semaphore
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 
+//***************
+//* API VERSION *
+//***************
+// global pipeline libraries can be loaded multiple times
+// the first one who loads it wins
+// caller can use this to double check the version is the one intended
+String version() {
+    return 'cloudlabel'
+}
+
 //*****************************
 //* JENKINS & PLUGINS VERSION *
 //*****************************
 
 @NonCPS
-String version() {
+String instanceVersion() {
     return Jenkins.instance.getVersion()
 }
 
@@ -365,9 +375,7 @@ List<java.util.LinkedHashMap> getNodes(String label = null) {
             }
             // else leave null
         } else {
-            // this is one of the 2 (already checked by isMaster)
-            // it.getClass() == hudson.slaves.DumbSlave
-            // it.getClass() == io.jenkins.docker.DockerTransientNode
+            // should be hudson.model.Slave
             nodeProps.name=it.name
 
             computer = it.computer
@@ -395,8 +403,8 @@ List<java.util.LinkedHashMap> getNodes(String label = null) {
         } else if (this.isDumbSlave(it)) {
             assert this.isDumbSlave(nodeProps)
         } else {
-            assert this.isDockerTransientNode(it)
-            assert this.isDockerTransientNode(nodeProps)
+            assert this.isCloudNode(it)
+            assert this.isCloudNode(nodeProps)
         }
 
         return nodeProps
@@ -405,49 +413,32 @@ List<java.util.LinkedHashMap> getNodes(String label = null) {
 
 @NonCPS
 Boolean isMaster(node) {
-    assert node.class in [hudson.model.Hudson, hudson.slaves.DumbSlave, io.jenkins.docker.DockerTransientNode],
-        "unexpected class ${node.class} for node object"
     return (node.class == hudson.model.Hudson)
 }
 
 @NonCPS
 Boolean isDumbSlave(node) {
-    assert node.class in [hudson.model.Hudson, hudson.slaves.DumbSlave, io.jenkins.docker.DockerTransientNode],
-        "unexpected class ${node.class} for node object"
     return (node.class == hudson.slaves.DumbSlave)
 }
 
 @NonCPS
-Boolean isDockerTransientNode(node) {
-    assert node.class in [hudson.model.Hudson, hudson.slaves.DumbSlave, io.jenkins.docker.DockerTransientNode],
-        "unexpected class ${node.class} for node object"
-    return (node.class == io.jenkins.docker.DockerTransientNode)
+Boolean isCloudNode(node) {
+    // assume any node not master of dumbSlave is cloud based
+    // asumption might be wrong ...
+    return (!isMaster(node)) && (!isDumbSlave(node))
 }
 
-// expose useful (and public/harmless) properties of labels (and cloud objects below)
+// expose list of labels
 @NonCPS
-List<java.util.LinkedHashMap> getLabels() {
-    return jenkins.model.Jenkins.instance.labels.collect{
-        def nameVar = it.name
-        def labelProps=[:]
-
-        labelProps.name = it.name
-        labelProps.clouds = it.clouds.collect{
-            def cloudProps = [:]
-            cloudProps.containerCap = it.containerCap
-            cloudProps.templates = it.templates.findAll{ nameVar == it.labelString }.collect{
-                def templateProps = [:]
-                templateProps.labelString = it.labelString
-                templateProps.instanceCap = it.instanceCap
-                templateProps.image = it.image
-                return templateProps
-            }
-            return cloudProps
-        }
-        return labelProps
-    }
+List<String> getLabels() {
+    return jenkins.model.Jenkins.instance.labels.collect{ it.name }
 }
 
+// check if label belongs to a cloud or not
+@NonCPS
+Boolean isCloudLabel(label) {
+    return jenkins.model.Jenkins.instance.labels.count{ it.name == label && it.clouds.size() > 0 } > 0
+}
 
 //*************
 //* SEMAPHORE *
