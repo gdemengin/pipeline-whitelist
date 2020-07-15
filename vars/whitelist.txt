@@ -95,6 +95,12 @@
                 get suppressed exceptions
             </p>
         </dd>
+        <dt><code>Throwable getCause(Throwable e)</code></dt>
+        <dd>
+            <p>
+                get cause exception
+            </p>
+        </dd>
         <dt><code>StackTraceElement[] filterStackTrace(StackTraceElement[] st)</code></dt>
         <dd>
             <p>
