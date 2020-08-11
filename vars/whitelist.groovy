@@ -114,6 +114,11 @@ Throwable[] getSuppressed(Throwable e) {
     return e.getSuppressed()
 }
 
+@NonCPS
+Throwable getCause(Throwable e) {
+    return e.getCause()
+}
+
 // filter elements not belonging to a user script
 // to help track where it came from in user's code
 @NonCPS
@@ -124,8 +129,12 @@ StackTraceElement[] filterStackTrace(StackTraceElement[] st) {
     return st.findAll {
         // keep only the ones from WorkflowScript, Script1.groovy, Script2.groovy, ...
         def filename = getFileName(it)
-        return filename == 'WorkflowScript' ||
+        // remove the ones with no line number (added for default function arguments)
+        def lineNb = getLineNumber(it)
+        return lineNb > 0 && (
+            filename == 'WorkflowScript' ||
             ( filename != null && filename.find(/^Script[0-9]+.groovy$/) )
+        )
     }
 }
 
@@ -134,13 +143,16 @@ StackTraceElement[] filterStackTrace(StackTraceElement[] st) {
 // (as suppressed exceptions can be used to help find the root cause of the exception)
 // do not use @NonCPS (getCurrentStackTrace does not allow it)
 void addTraceableStackTrace(Throwable e) {
+    // filter stackTrace of exception, suppressed and cause and check if anything pops up
+    // if so we have information about where the exception came from, no need to add more
     if (
         filterStackTrace(getStackTrace(e)).size() == 0 &&
-        getSuppressed(e).findAll {
+        e.getSuppressed().findAll {
             filterStackTrace(getStackTrace(it)).size() > 0
-        }.size() == 0
+        }.size() == 0 &&
+        (e.getCause() == null || filterStackTrace(getStackTrace(e.getCause())).size() == 0)
     ) {
-        def showUserStack = new Exception("workarround to show user stackTrace")
+        def showUserStack = new Exception("Traceable user stackTrace")
         // filter to show only stackTraceElements from user's script leading up to here
         showUserStack.setStackTrace(filterStackTrace(getCurrentStackTrace()))
         e.addSuppressed(showUserStack)

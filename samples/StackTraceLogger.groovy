@@ -11,10 +11,25 @@
 // TODO: find a way to put stackTraceLogger in an annotation (something like AspectJ annotations for example)
 
 // import whitelist library
-@Library('pipeline-whitelist@1.1') _
+@Library('pipeline-whitelist@cause') _
 
 // max log size: 10KB
+@groovy.transform.Field
 MAX_LOG_SIZE = 10*1024
+
+// set to false if security-plugin version is less than 1.44
+@groovy.transform.Field
+ALLOW_NEW_EXCEPTION = null
+whitelist.plugins().findAll{ it.shortName == 'script-security' }.each {
+    def SSversionTokens = it.version.split(/\./)
+    assert SSversionTokens.size() >= 2 && SSversionTokens[0] ==~ /\d+/ && SSversionTokens[1] ==~ /\d+/
+    def SSmajor = SSversionTokens[0].toInteger()
+    def SSminor = SSversionTokens[1].toInteger()
+
+    assert ALLOW_NEW_EXCEPTION == null
+    ALLOW_NEW_EXCEPTION = ((SSmajor > 1) || (SSmajor == 1 && SSminor >= 44))
+}
+assert ALLOW_NEW_EXCEPTION != null
 
 enum LogLevel{
     NONE,
@@ -37,16 +52,25 @@ void log(LogLevel loglevel, msg, Integer depth = 0) {
         loglevel != LogLevel.NONE &&
         defaultLogLevel <= loglevel
     ) {
+        def st = whitelist.getCurrentStackTrace()
+        // remove technical stacks without line number
+        // (remove elements with line -1 when there is a default function argument)
+        st = st.findAll{ whitelist.getLineNumber(it) > 0 }
+
         def logMsg = loglevel.name()
         logMsg += ' - '
-        logMsg += whitelist.getCurrentStackTrace()[depth + 1].toString()
+        if (st.size() > depth + 1) {
+            logMsg += st[depth + 1].toString()
+        } else {
+            logMsg += '???'
+        }
         logMsg += ' - '
         logMsg += new Date().format('dd/MM/yyyy HH:mm:ss').toString()
         logMsg += ': '
         logMsg += msg.toString()
 
         if (logMsg.size() > MAX_LOG_SIZE) {
-            log(LogLevel.WARN, "next logline shall be truncated (actual size: ${logMsg.size()} ; max size: ${MAX_LOG_SIZE})", depth)
+            log(LogLevel.WARN, "next logline shall be truncated (actual size: ${logMsg.size()} ; max size: ${MAX_LOG_SIZE})", depth + 1)
             logMsg = logMsg.substring(0, MAX_LOG_SIZE) + "(...) <truncated to ${MAX_LOG_SIZE})>"
         }
 
@@ -61,20 +85,24 @@ void log(LogLevel loglevel, msg, Integer depth = 0) {
 // optional: filter stack
 @NonCPS
 String exceptionToString(Throwable e, filterStack = true, indent = 0) {
-    def ret = ''
-
-    def suppressed = ''
-    whitelist.getSuppressed(e).each {
-        ret += 'Also: '
-        ret += exceptionToString(it, filterStack, 1)
-        ret += '\n'
-    }
-
     def st = whitelist.getStackTrace(e)
     if (filterStack) {
         st = whitelist.filterStackTrace(st)
     }
-    ret += "${e}\n${ st.collect{ "\tat ${it.toString()}" }.join('\n') }"
+    def ret = "${e}\n${ st.collect{ "\tat ${it.toString()}" }.join('\n') }"
+
+    def cause = whitelist.getCause(e)
+    if (cause != null) {
+        ret += 'Caused by: '
+        ret += exceptionToString(cause, filterStack, indent + 1)
+        ret += '\n'
+    }
+
+    whitelist.getSuppressed(e).each {
+        ret += 'Suppressed: '
+        ret += exceptionToString(it, filterStack, indent + 1)
+        ret += '\n'
+    }
 
     // add indent at the end in case exception contains \n
     ret = ret.split('\n').collect{ whitelist.multiply('\t', indent) + it }.join('\n')
@@ -100,9 +128,11 @@ def stackTraceLogger(
     levels = defaultLevels
 
     assert levels.keySet().sort() == [ 'args', 'beginEnd', 'retVal' ]
-    assert levels.each{ k,v -> v instanceof LogLevel }
+    // assert levels.each{ k,v -> v instanceof LogLevel }
+    assert levels.each{ k,v -> v in [ LogLevel.NONE, LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR ]  }
 
-    def currentStackTrace = whitelist.getCurrentStackTrace()[1]
+    def currentStackTrace = whitelist.getCurrentStackTrace().findAll{ whitelist.getLineNumber(it) > 0 }[1]
+
     def className = whitelist.getClassName(currentStackTrace)
     def methodName = whitelist.getMethodName(currentStackTrace)
     def name = "${className}.${methodName}"
@@ -159,8 +189,9 @@ def stackTraceLogger(
 // simple function, no return value
 def testNoReturn() {
     return stackTraceLogger() {
+        def line = whitelist.getLineNumber(whitelist.getCurrentStackTrace()[0])
         print 'in testNoReturn'
-        log(LogLevel.INFO, 'in testNoReturn')
+        log(LogLevel.INFO, "in testNoReturn line ${line + 2}")
     }
 }
 
@@ -249,14 +280,15 @@ def testLevelsNoReturnValue(a,b) {
 
 print '************* TEST DEFAULT LOG LEVEL & SIZE *************'
 
-log(LogLevel.INFO, 'test log in default (INFO) mode: debug log should not appear')
-log(LogLevel.DEBUG, 'test debug log')
+def line = whitelist.getLineNumber(whitelist.getCurrentStackTrace()[0])
+log(LogLevel.INFO, "test log in default (INFO) mode: debug log should not appear line=${line + 1}")
+log(LogLevel.DEBUG, 'test debug log not visible')
 defaultLogLevel = LogLevel.DEBUG
-log(LogLevel.INFO, 'test log in DEBUG mode : debug log should appear')
-log(LogLevel.DEBUG, 'test debug log')
+log(LogLevel.INFO, "test log in DEBUG mode : debug log should appear line=${line + 4}")
+log(LogLevel.DEBUG, 'test debug log visible')
 defaultLogLevel = LogLevel.INFO
-log(LogLevel.INFO, 'test log back in INFO mode : debug log should not appear')
-log(LogLevel.DEBUG, 'test debug log')
+log(LogLevel.INFO, "test log back in INFO mode : debug log should not appear line=${line + 7}")
+log(LogLevel.DEBUG, 'test debug log not visible')
 log(LogLevel.INFO, 'test_max_log_size_' + whitelist.multiply('*', MAX_LOG_SIZE * 2))
 
 print '************* TEST stackTraceLogger in INFO mode *************'
@@ -270,15 +302,17 @@ assert testNested(toto:4, titi:2) == 4
 
 print '************* TEST stackTraceLogger with Exceptions/Errors *************'
 
-def catched1 = false
-try {
-    testException()
-} catch(e) {
-    print e
-    assert e.class == Exception
-    catched1 = true
+if (ALLOW_NEW_EXCEPTION) {
+    def catched1 = false
+    try {
+        testException()
+    } catch(e) {
+        print e
+        assert e.class == Exception
+        catched1 = true
+    }
+    assert catched1
 }
-assert catched1
 
 def catched2 = false
 try {
