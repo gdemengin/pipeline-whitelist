@@ -18,7 +18,7 @@ import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 // the first one who loads it wins
 // caller can use this to double check the version is the one intended
 String version() {
-    return 'cloudlabel'
+    return '2.0'
 }
 
 //*****************************
