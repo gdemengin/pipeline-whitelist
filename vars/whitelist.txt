@@ -5,10 +5,16 @@
         <a href="https://github.com/gdemengin/pipeline-whitelist">pipeline-whitelist</a> a library to expose useful functions (blacklisted by default in jenkins) which should be whitelisted IMHO (In My Humble Opinion)
     </p>
     <p>
-        <b>Instance and plugins versions</b>
+        <b>versions</b>
     </p>
     <dl>
         <dt><code>String version()</code></dt>
+        <dd>
+            <p>
+                whitelist version (useful if whitelist was loaded multiple times to make sure which one got imported)
+            <p>
+        </dd>
+        <dt><code>String instanceVersion()</code></dt>
         <dd>
             <p>
                 get instance version
@@ -342,35 +348,28 @@
         <dt>
             <code>Boolean isMaster(node)</code><br>
             <code>Boolean isDumbSlave(node)</code><br>
-            <code>Boolean isDockerTransientNode(node)</code>
+            <code>Boolean isCloudNode(node)</code>
         </dt>
         <dd>
             <p>
                 node type (using getNodes result or native node object)
             <p>
         </dd>
-        <dt><code>List&lt;java.util.LinkedHashMap&gt; getLabels()</code></dt>
+        <dt><code>List&lt;String&gt; getLabels()</code></dt>
         <dd>
             <p>
-                get all labels on the instance<br>
-                returns list properties of the internal label objects:
-                <ul>
-                    <li><code>name</code></li>
-                    <li><code>List&lt;java.util.LinkedHashMap&gt; clouds</code> : list of clouds (docker label definition)
-                        <ul>
-                            <li><code>containerCap</code> : max number of containers of this label</li>
-                            <li><code>List&lt;java.util.LinkedHashMap&gt; templates</code> : list of definitions of cloud on this instance (could be more than 1)
-                                <ul>
-                                    <li><code>labelString</code></li>
-                                    <li><code>image</code></li>
-                                    <li><code>instanceCap</code> : max number of containers on instance</li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+                get all labels on the instance
             </p>
         </dd>
+        <dt>
+            <code>Boolean isCloudLabel(label)</code>
+        </dt>
+        <dd>
+            <p>
+                label type
+            <p>
+        </dd>
+
     </dl>
     <p>
         <b>NotBlockingSemaphore</b> an implementation of a semaphore for parallel statements

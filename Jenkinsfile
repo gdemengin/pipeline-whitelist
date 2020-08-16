@@ -2,23 +2,23 @@
 
 
 // import whitelist library
-@Library('pipeline-whitelist@1.2') _
+@Library('pipeline-whitelist@cloudlabel') _
 
 // ===============
 // = constants   =
 // ===============
 
-// label which exist on the instance, has linux hosts
-// null if all hosts fit the description
+// label on the instance with linux hosts
+// leave null if all hosts fit the description
 LABEL_LINUX='linux'
+// label on the instance configured as docker cloud
+LABELS_CLOUD=[ 'centos-dockercloud' ]
 
 // =============
 // = globals   =
 // =============
 
-// true when "new Exception" is allowed
-// set to false to test with older versions
-// TODO find which version is affected and automatically determine if true or false
+// true when "new Exception" is allowed (if plugin script-security is 1.44 or more)
 @groovy.transform.Field
 newExcAllowed = true
 
@@ -37,16 +37,19 @@ def testVersion() {
     print 'testing version'
 
     def version = whitelist.version()
-    def versionStr = "Jenkins version : ${version}"
+    assert version == 'cloudlabel'
+
+    def instanceVersion = whitelist.instanceVersion()
+    def versionStr = "Jenkins Instance Version : ${instanceVersion}"
     print versionStr
 
-    def versionTokens = version.split(/\./)
+    def versionTokens = instanceVersion.split(/\./)
     assert versionTokens.size() >= 2 && versionTokens[0] ==~ /\d+/ && versionTokens[1] ==~ /\d+/
     def major = versionTokens[0].toInteger()
     def minor = versionTokens[1].toInteger()
 
     assert major >= 2,
-        "jenkins version ${version} is not greater than 2, this is unexpected"
+        "jenkins version ${instanceVersion} is not greater than 2, this is unexpected"
 
     def plugins = whitelist.plugins()
     sortByField(plugins, 'shortName')
@@ -436,7 +439,8 @@ def testNodesAndLabels() {
     assert whitelist.getNodes().size() != 0
 
     for (node in whitelist.getNodes()) {
-        assert whitelist.isMaster(node) || whitelist.isDumbSlave(node) || whitelist.isDockerTransientNode(node)
+        assert whitelist.isMaster(node) || whitelist.isDumbSlave(node) || whitelist.isCloudNode(node)
+        print "node ${node} type: master=${whitelist.isMaster(node)} dumbSlave=${whitelist.isDumbSlave(node)} cloud=${whitelist.isCloudNode(node)}"
     }
 
     assert whitelist.getNodes('wrongLabelDoesNotExist').size() == 0
@@ -446,12 +450,34 @@ def testNodesAndLabels() {
     assert whitelist.isMaster(whitelist.getNodes('master')[0])
 
     print "labels : \n\t${whitelist.getLabels().collect { it.toString() }.join('\n\t')}"
-
     assert whitelist.getLabels().size() != 0
 
+    for (label in whitelist.getLabels()) {
+        print "label ${label} type: cloud=${whitelist.isCloudLabel(label)}"
+    }
+
     // make sure we can call getNodes (no exception) on all labels
-    for (label in whitelist.getLabels().collect{ it.name }) {
+    for (label in whitelist.getLabels()) {
         print "nodes for label ${label} : \n\t${whitelist.getNodes(label).collect { it.toString() }.join('\n\t')}"
+    }
+
+    // test specific cloud labels to test that we can access them with getNodes without error
+
+    for (label in LABELS_CLOUD) {
+        assert label in whitelist.getLabels()
+        assert whitelist.isCloudLabel(label)
+        // wait a little bit in case label is busy
+        timeout(time: 5, unit: 'MINUTES') {
+
+            node(label) {
+                def nodes = whitelist.getNodes(env.NODE_NAME)
+                assert nodes.size() == 1
+                def node = nodes[0]
+                print "node ${node} type: master=${whitelist.isMaster(node)} dumbSlave=${whitelist.isDumbSlave(node)} cloud=${whitelist.isCloudNode(node)}"
+                assert whitelist.isCloudNode(node)
+                assert node in whitelist.getNodes(label)
+            }
+        }
     }
 }
 
@@ -506,6 +532,10 @@ def versionStr = ''
 stage('testVersion') {
     versionStr = testVersion()
 }
+// save version asap (useful to reproduce issues on another test instance)
+stage('testJobFilesAccess') {
+    testJobFilesAccess(versionStr)
+}
 stage('testString') {
     testString()
 }
@@ -523,9 +553,6 @@ stage('testJobsAndBuilds') {
 }
 stage('testNodesAndLabels') {
     testNodesAndLabels()
-}
-stage('testJobFilesAccess') {
-    testJobFilesAccess(versionStr)
 }
 stage('testSemaphore') {
     testSemaphore()
