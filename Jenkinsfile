@@ -527,12 +527,11 @@ def testSemaphore() {
 // = run tests   =
 // ===============
 
-
 def versionStr = ''
 stage('testVersion') {
     versionStr = testVersion()
 }
-// save version asap (useful to reproduce issues on another test instance)
+// save version artifact asap (useful to reproduce issues on another test instance)
 stage('testJobFilesAccess') {
     testJobFilesAccess(versionStr)
 }
