@@ -18,7 +18,7 @@ import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 // the first one who loads it wins
 // caller can use this to double check the version is the one intended
 String version() {
-    return '2.0'
+    return 'folder'
 }
 
 //*****************************
@@ -192,20 +192,12 @@ java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build) {
 
 @NonCPS
 java.util.LinkedHashMap getJobs() {
-    def jobs = Jenkins.getInstance().getItems().findAll{
+    def jobs = Jenkins.getInstance().getAllItems().findAll{
             it instanceof hudson.model.Job
         }
 
-    // add multiconf children jobs
-    Jenkins.getInstance().getItems().findAll{
-        ! (it instanceof hudson.model.Job)
-    }.each{
-        // make sure this is a type we know of
-        assert it instanceof org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject, "unsupported class for item ${it.class}"
-        jobs += it.items
-    }
-
-    // DO NOT add matrix configurations (children jobs of MatrixProject), they can be retrieved by getMatrixConfiguration
+    // DO NOT add matrix configurations (children jobs of MatrixProject)
+    // they can be retrieved by getMatrixConfiguration and they are not jobs startable independently
 
     return jobs.collectEntries{ [(it.fullName): it] }
 }
