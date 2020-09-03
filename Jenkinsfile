@@ -2,7 +2,7 @@
 
 
 // import whitelist library
-@Library('pipeline-whitelist@folder') _
+@Library('pipeline-whitelist@2.0.1') _
 
 // ===============
 // = constants   =
@@ -37,7 +37,7 @@ def testVersion() {
     print 'testing version'
 
     def version = whitelist.version()
-    assert version == 'folder'
+    assert version == '2.0.1'
 
     def instanceVersion = whitelist.instanceVersion()
     def versionStr = "Jenkins Instance Version : ${instanceVersion}"

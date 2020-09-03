@@ -11,7 +11,7 @@
 // TODO: find a way to put stackTraceLogger in an annotation (something like AspectJ annotations for example)
 
 // import whitelist library
-@Library('pipeline-whitelist@folder') _
+@Library('pipeline-whitelist@2.0.1') _
 
 // max log size: 10KB
 @groovy.transform.Field
