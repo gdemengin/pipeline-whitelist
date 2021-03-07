@@ -18,7 +18,7 @@ import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 // the first one who loads it wins
 // caller can use this to double check the version is the one intended
 String version() {
-    return '2.0.1'
+    return '3.0'
 }
 
 //*****************************
@@ -193,11 +193,10 @@ java.util.LinkedHashMap getRawMatrixRunsLog(RunWrapper build) {
 @NonCPS
 java.util.LinkedHashMap getJobs() {
     def jobs = Jenkins.getInstance().getAllItems().findAll{
-            it instanceof hudson.model.Job
+            // DO NOT include matrix configurations (children jobs of MatrixProject)
+            // they can be retrieved by getMatrixConfiguration and they are not jobs startable independently
+            it instanceof hudson.model.Job && ((it instanceof hudson.matrix.MatrixConfiguration) == false)
         }
-
-    // DO NOT add matrix configurations (children jobs of MatrixProject)
-    // they can be retrieved by getMatrixConfiguration and they are not jobs startable independently
 
     return jobs.collectEntries{ [(it.fullName): it] }
 }
@@ -273,12 +272,7 @@ String unArchiveStringArtifact(String name, RunWrapper build = currentBuild) {
 // get job config file
 @NonCPS
 String getJobConfig(RunWrapper build = currentBuild) {
-
-    def jobRoot = build.rawBuild.getRootDir()
-    def configFile = new File(jobRoot.parentFile.parentFile, 'config.xml')
-    assert configFile.exists()
-
-    return configFile.text
+    return Jenkins.instance.getItemByFullName(build.fullProjectName).configFile.file.text
 }
 
 // get pipeline script from run
@@ -428,7 +422,7 @@ List<String> getLabels() {
 
 // check if label belongs to a cloud or not
 @NonCPS
-Boolean isCloudLabel(label) {
+Boolean isCloudLabel(String label) {
     return jenkins.model.Jenkins.instance.labels.count{ it.name == label && it.clouds.size() > 0 } > 0
 }
 
@@ -476,6 +470,119 @@ void acquireSemaphore(NotBlockingSemaphore sem) {
 
 void releaseSemaphore(NotBlockingSemaphore sem) {
     sem.release()
+}
+
+@NonCPS
+def setViewFilter(String name, String regex, Boolean recurse = true, Boolean filterExecutors = true, Boolean filterQueue = true, List<String> jobNames = []) {
+    def viewName = name
+    def parentItem = Jenkins.instance
+    if (name.contains('/')) {
+        def folderName = name.split('/').dropRight(1).join('/')
+        viewName = name.split('/').takeRight(1)[0]
+        parentItem = Jenkins.getInstance().getItemByFullName(folderName)
+        assert parentItem != null, "'${folderName}' missing"
+    }
+    parentItem.views.findAll { it.name == viewName }.each {
+        assert it instanceof hudson.model.ListView
+        it.setJobNames(jobNames.toSet())
+        it.setIncludeRegex(regex)
+        it.setRecurse(recurse)
+        it.filterExecutors = filterExecutors
+        it.filterQueue = filterQueue
+        it.save()
+
+        print "jobs in ${name}:"
+        it.getAllItems().each{
+            print "    ${it.getFullName()}"
+        }
+    }
+}
+
+@NonCPS
+def saveJob(String name) {
+    Jenkins.instance.getItemByFullName(name).save()
+}
+
+@NonCPS
+def disableJob(String name, Boolean disable) {
+    Jenkins.instance.getItemByFullName(name).disabled = disable
+}
+
+@NonCPS
+def copyJob(String src, String dstFolder) {
+    Jenkins.getInstance().checkPermission(Item.CREATE)
+
+    def srcName = (new File(src)).name
+
+    def dstFolderItem = null
+    def target = null
+    if (dstFolder != '/') {
+        dstFolderItem = Jenkins.getInstance().getItemByFullName(dstFolder)
+        assert dstFolderItem != null, "'${dstFolder}' missing"
+        target = dstFolder + '/' + srcName
+    }
+    else {
+        dstFolderItem = Jenkins.getInstance()
+        target = srcName
+    }
+
+    assert Jenkins.getInstance().getItemByFullName(target) == null, "Job '${target}' already exists"
+
+    def srcJob = Jenkins.getInstance().getItemByFullName(src)
+    assert srcJob != null, "Job '${src}' missing"
+
+    dstFolderItem.copy(srcJob, srcName)
+
+    def newJob = Jenkins.getInstance().getItemByFullName(target)
+    assert null != newJob, "failed to copy '${src}' as '${target}'"
+    newJob.save()
+}
+
+@NonCPS
+def renameJob(String src, String dst) {
+    Jenkins.getInstance().checkPermission(Item.CREATE)
+
+    def srcJob = Jenkins.getInstance().getItemByFullName(src)
+    assert srcJob != null, "Job '${src}' missing"
+
+    assert (new File(dst)).name == dst, "${dst} cannot include folder name"
+
+    srcJob.renameTo(dst)
+
+    def target = (new File(src)).parent + '/' + dst
+    def newJob = Jenkins.getInstance().getItemByFullName(target)
+    assert null != newJob, "failed to rename job '${src}' as '${target}'"
+    newJob.save()
+}
+
+@NonCPS
+def moveJob(String src, String dstFolder) {
+    Jenkins.getInstance().checkPermission(Item.CREATE)
+
+    def srcName = (new File(src)).name
+
+    def dstFolderItem = null
+    def target = null
+    if (dstFolder != '/') {
+        dstFolderItem = Jenkins.getInstance().getItemByFullName(dstFolder)
+        assert dstFolderItem != null, "'${dstFolder}' missing"
+        target = dstFolder + '/' + srcName
+    }
+    else {
+        dstFolderItem = Jenkins.getInstance()
+        target = srcName
+    }
+
+    assert Jenkins.getInstance().getItemByFullName(target) == null, "Job '${target}' already exists"
+
+    def srcJob = Jenkins.getInstance().getItemByFullName(src)
+    assert srcJob != null, "Job '${src}' missing"
+
+    hudson.model.Items.move(srcJob, dstFolderItem)
+
+    def newJob = Jenkins.getInstance().getItemByFullName(target)
+    assert null != newJob, "failed to move '${src}' as '${target}'"
+    newJob.save()
 }
 
 return this

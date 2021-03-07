@@ -1,5 +1,5 @@
 // stackTraceLogger : a function wrapper to add useful logs
-// based on https://github.com/gdemengin/pipeline-whitelist/ "Global Pipeline Library" whitelist
+// based on https://github.com/gdemengin/pipeline-whitelist
 
 // it shows stackTrace (class name, method name, file name and line number) & date
 // when entering and leaving functions (optional)
@@ -11,7 +11,7 @@
 // TODO: find a way to put stackTraceLogger in an annotation (something like AspectJ annotations for example)
 
 // import whitelist library
-@Library('pipeline-whitelist@2.0.1') _
+@Library('pipeline-whitelist@logparser') _
 
 // max log size: 10KB
 @groovy.transform.Field

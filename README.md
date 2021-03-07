@@ -1,45 +1,72 @@
 # pipeline-whitelist
 a library to expose useful functions which are blacklisted by default in jenkins, and which should be whitelisted IMHO (in my humble opinion)
 
+Content:
+  * whitelist module provides an encapsulation of some functions blacklisted in Jenkins by default to make them available to all pipelines importing the library
+    * It may use internally functions that we would not want to expose but its objective is to stay harmless by exposing only harmless functionalities
+  * logparser module provides API to parse logs (from currentBuild or from another run or job) and append them with name of current branch/stage
+    * as String for those who need to programatically parse logs
+    * or as run artifacts for those who need to archive logs with branch names for later use
+    * it provides accessors to 'pipeline step' logs
+  * it provides accessors to 'Blue Ocean' logs urls for parallel branches and stages
+  
+Compatibility:
+  * tested with 2.190.1 & 2.277.1
+
 ## Table of contents
-- [Library Content](#content)
 - [Documentation](#documentation)
 - [Installation](#installation)
+- [Know Limitations](#limitations)
 - [Change log](#changelog)
-
-
-## Library Content <a name="content"></a>
-- it provides an encapsulation of some functions blacklisted in Jenkins by default to make them available to all pipelines importing the library
-  It may use internally functions that we would not want to expose but its objective is to stay harmless by exposing only harmless functionalities
 
 ## Documentation <a name="documentation"></a>
 
 ### import pipeline-whitelist library
 in Jenkinsfile import library like this
 ```
-@Library('pipeline-whitelist@2.0.1') _
+@Library('pipeline-whitelist@logparser') _
 ```
 _identifier "pipeline-whitelist" is the name of the library set by jenkins administrator in instance configuration:_
 * _it may be different on your instance_
 * _see below [Installation](#installation)_
 
 ### use library's functions:
-- the name of the package is whitelist:
+- the library contains 2 modules called logparser and whitelist:
   ```
   // print jenkins version
   print whitelist.version()
+
+  // get logs with branch prefix
+  def mylog = logparser.getLogsWithBranchInfo()
   ```
 
-- see complete documentation here: [whitelist.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/2.0.1/vars/whitelist.txt)
-also available in $JOB_URL/pipeline-syntax/globals#whitelist (visible only after the library has been imported once)
+### Detailed Documentation
+
+- see online documentation here: [whitelist.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/logparser/vars/whitelist.txt) and [logparser.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/logparser/vars/logparser.txt)
+* _also available in $JOB_URL/pipeline-syntax/globals#whitelist & $JOB_URL/pipeline-syntax/globals#logparser_
+  * _visible only after the library has been imported once_
+  * _requires configuring 'Markup Formater' as 'Safe HTML' in $JENKINS_URL/configureSecurity_
 
 
 ## Installation <a name="installation"></a>
 
-pipeline-whitelist is meant to be used as a "Global Pipeline Library"
-- configured by jenkins administrator ("Manage jenkins > Configure System > Global Pipeline Library")
-- cf https://jenkins.io/doc/book/pipeline/shared-libraries/
+install the library as a "Global Pipeline Library" in "Manage jenkins > Configure System > Global Pipeline Library" (cf https://jenkins.io/doc/book/pipeline/shared-libraries/)
 
+Note:
+  * it's also possible to copy the code in a Jenkinsfile and use functions from there
+  * but it would imply approving whatever needs to be in "Manage jenkins > In-process Script Approval" (including some unsafe API's)
+  * using this library as a "Global Pipeline Library" allows to avoid that (avoid getting access to unsafe API's)
+
+
+## Known limitations <a name="limitations"></a>
+
+### whitelist limitations:
+
+### logparser limitations:
+
+* calls to `logparser.getLogsWithBranchInfo()` may fail (and cause job to fail) when log is too big (millions of lines, hundreds of MB of logs) because of a lack of heap space
+
+* logs of nested stages (stage inside stage) are not correctly handled in Blue Ocean (Blue Ocean limitation)
 
 ## Change log <a name="changelog"></a>
 
@@ -72,3 +99,7 @@ pipeline-whitelist is meant to be used as a "Global Pipeline Library"
 
 * 2.0.1 (09/2020):
   - fix issue with getJobs() not compatible with folder type
+
+* 3.0 (03/2021):
+  - merge with https://github.com/gdemengin/pipeline-logparser (2.0.1)
+  - add functions to move/copy/rename/enable jobs from/to folders (moveJob, copyJob, renameJob, saveJob, disableJob) and to edit views (setViewFilter)
