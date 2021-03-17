@@ -4,7 +4,7 @@
 // the folder and view will be edited
 
 // import whitelist library
-@Library('pipeline-whitelist@logparser') _
+@Library('pipeline-whitelist@3.0') _
 
 // freestyle job (will be copied)
 TEST_JOB='testFolder/testNestedFolder/testFreeStyle'

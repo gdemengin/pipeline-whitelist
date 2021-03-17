@@ -24,7 +24,7 @@ Compatibility:
 ### import pipeline-whitelist library
 in Jenkinsfile import library like this
 ```
-@Library('pipeline-whitelist@logparser') _
+@Library('pipeline-whitelist@3.0') _
 ```
 _identifier "pipeline-whitelist" is the name of the library set by jenkins administrator in instance configuration:_
 * _it may be different on your instance_
@@ -42,7 +42,7 @@ _identifier "pipeline-whitelist" is the name of the library set by jenkins admin
 
 ### Detailed Documentation
 
-- see online documentation here: [whitelist.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/logparser/vars/whitelist.txt) and [logparser.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/logparser/vars/logparser.txt)
+- see online documentation here: [whitelist.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/3.0/vars/whitelist.txt) and [logparser.txt](https://htmlpreview.github.io?https://github.com/gdemengin/pipeline-whitelist/blob/3.0/vars/logparser.txt)
 * _also available in $JOB_URL/pipeline-syntax/globals#whitelist & $JOB_URL/pipeline-syntax/globals#logparser_
   * _visible only after the library has been imported once_
   * _requires configuring 'Markup Formater' as 'Safe HTML' in $JENKINS_URL/configureSecurity_

@@ -2,7 +2,7 @@
 
 
 // import whitelist library
-@Library('pipeline-whitelist@logparser') _
+@Library('pipeline-whitelist@3.0') _
 
 
 properties([
