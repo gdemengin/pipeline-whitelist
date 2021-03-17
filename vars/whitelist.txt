@@ -319,6 +319,41 @@
         </dd>
     </dl>
     <p>
+        <b>jobs/folders/view management</b>
+    </p>
+    <dl>
+        <dt><code>void setViewFilter(String name, String regex, Boolean recurse, Boolean filterExecutors, Boolean filterQueue)</code></dt>
+        <dd>
+            <p>
+                configure list view with regex and filters
+                view can be inside a folder (folderName/viewName)
+            <p>
+        </dd>
+        <dt>
+            <code>void copyJob(String src, String dstFolder)</code>
+            <code>void renameJob(String src, String dst)</code>
+            <code>void moveJob(String src, String dstFolder)</code>
+        </dt>
+        <dd>
+            <p>
+                copy/rename/move job from/to folder
+                if job inside a folder use folderName/jobName
+            <p>
+        </dd>
+        <dt><code>void disableJob(String name, Boolean disable)</code></dt>
+        <dd>
+            <p>
+                disable or enable job
+            <p>
+        </dd>
+        <dt><code>void saveJob(String name)</code></dt>
+        <dd>
+            <p>
+                save job (useful after move or rename of jobs to persist the jobs referencing it
+            <p>
+        </dd>
+    </dl>
+    <p>
         <b>Node and Labels</b>
     </p>
     <dl>
@@ -362,7 +397,7 @@
             </p>
         </dd>
         <dt>
-            <code>Boolean isCloudLabel(label)</code>
+            <code>Boolean isCloudLabel(String label)</code>
         </dt>
         <dd>
             <p>

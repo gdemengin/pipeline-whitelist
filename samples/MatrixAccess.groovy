@@ -1,11 +1,11 @@
-// sample pipeline to test (and demonstrate) matrix functionalities of https://github.com/gdemengin/pipeline-whitelist/ "Global Pipeline Library" whitelist
+// sample pipeline to test (and demonstrate) matrix functionalities of https://github.com/gdemengin/pipeline-whitelist
 
 // requires job-dsl and configuration-as-code plugins to create and update matrix jobs
 // some DSL scripts will need to be approved by administrator
 //   before this sample can be run without error
 
 // import whitelist library
-@Library('pipeline-whitelist@2.0.1') _
+@Library('pipeline-whitelist@3.0') _
 
 def prepare() {
     // make sure we have the plugins we need to use DSL scripts
