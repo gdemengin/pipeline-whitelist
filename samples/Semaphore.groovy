@@ -1,7 +1,7 @@
 // sample pipeline to demonstrate semaphore functionalities of https://github.com/gdemengin/pipeline-whitelist
 
 // import whitelist library with semaphore
-@Library('pipeline-whitelist@logparser') _
+@Library('pipeline-whitelist@3.0') _
 
 
 def thread (name, sem, time) {
