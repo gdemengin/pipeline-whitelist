@@ -473,7 +473,7 @@ void releaseSemaphore(NotBlockingSemaphore sem) {
 }
 
 @NonCPS
-def setViewFilter(String name, String regex, Boolean recurse, Boolean filterExecutors, Boolean filterQueue) {
+def setViewFilter(String name, String regex, Boolean recurse = true, Boolean filterExecutors = true, Boolean filterQueue = true, List<String> jobNames = []) {
     def viewName = name
     def parentItem = Jenkins.instance
     if (name.contains('/')) {
@@ -484,11 +484,17 @@ def setViewFilter(String name, String regex, Boolean recurse, Boolean filterExec
     }
     parentItem.views.findAll { it.name == viewName }.each {
         assert it instanceof hudson.model.ListView
+        it.setJobNames(jobNames.toSet())
         it.setIncludeRegex(regex)
         it.setRecurse(recurse)
         it.filterExecutors = filterExecutors
         it.filterQueue = filterQueue
         it.save()
+
+        print "jobs in ${name}:"
+        it.getAllItems().each{
+            print "    ${it.getFullName()}"
+        }
     }
 }
 

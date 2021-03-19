@@ -322,7 +322,7 @@
         <b>jobs/folders/view management</b>
     </p>
     <dl>
-        <dt><code>void setViewFilter(String name, String regex, Boolean recurse, Boolean filterExecutors, Boolean filterQueue)</code></dt>
+        <dt><code>void setViewFilter(String name, String regex, Boolean recurse = true, Boolean filterExecutors = true, Boolean filterQueue = true, List<String> jobNames = [])</code></dt>
         <dd>
             <p>
                 configure list view with regex and filters
